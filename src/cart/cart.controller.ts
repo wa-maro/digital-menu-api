@@ -7,13 +7,18 @@ import {
   Patch,
   Post,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { CustomRequest } from 'src/interfaces/custom-request.interface';
 import { AddToCartDto } from './dto/add-to-cart.dto';
-import { UpdateCategoryDto } from 'src/menu/dto/update-category.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
+import { RoleGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'), RoleGuard)
+@Roles('admin', 'manager', 'customer')
 @Controller('cart')
 export class CartController {
   constructor(private readonly cartService: CartService) {}

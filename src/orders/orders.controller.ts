@@ -11,8 +11,11 @@ import { OrdersService } from './orders.service';
 import { PlaceOrderDto } from './dto/place-order.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { CustomRequest } from 'src/interfaces/custom-request.interface';
+import { RoleGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), RoleGuard)
+@Roles('admin', 'manager', 'customer')
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
