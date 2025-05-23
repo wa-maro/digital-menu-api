@@ -8,7 +8,7 @@ import { Category, CategoryDocument } from './schemas/category.schema';
 import { MenuItem, MenuItemDocument } from './schemas/item.schema';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { CreateItemDto } from './dto/create-item.dto';
-import { Model } from 'mongoose';
+import { isValidObjectId, Model } from 'mongoose';
 
 @Injectable()
 export class MenuService {
@@ -33,6 +33,9 @@ export class MenuService {
   }
 
   async updateCategory(id: string, dto: Partial<CreateCategoryDto>) {
+    if (!isValidObjectId(id))
+      throw new BadRequestException(`Invalid category ID: ${id}`);
+
     const category = await this.categoryModel.findByIdAndUpdate(id, dto, {
       new: true,
     });
@@ -43,6 +46,9 @@ export class MenuService {
   }
 
   async deleteCategory(id: string) {
+    if (!isValidObjectId(id))
+      throw new BadRequestException(`Invalid category ID: ${id}`);
+
     const category = await this.categoryModel.findByIdAndDelete(id);
     if (!category)
       throw new NotFoundException(`Category with ID "${id}" not found.`);
@@ -66,6 +72,9 @@ export class MenuService {
   }
 
   async updateItem(id: string, dto: Partial<CreateItemDto>) {
+    if (!isValidObjectId(id))
+      throw new BadRequestException(`Invalid item ID: ${id}`);
+
     const item = await this.itemModel.findByIdAndUpdate(id, dto, { new: true });
     if (!item) throw new NotFoundException(`Item with ID "${id}" not found.`);
 
@@ -73,6 +82,9 @@ export class MenuService {
   }
 
   async deleteItem(id: string) {
+    if (!isValidObjectId(id))
+      throw new BadRequestException(`Invalid item ID: ${id}`);
+
     const item = await this.itemModel.findByIdAndDelete(id);
     if (!item) throw new NotFoundException(`Item with ID "${id}" not found.`);
 
