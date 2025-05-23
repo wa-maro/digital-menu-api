@@ -1,3 +1,3 @@
-# Digital Menu and Online Ordering System - UI
+# Digital Menu and Online Ordering System - Rest API
 
-The frontend UI for the project
+The backend Rest API for the project
