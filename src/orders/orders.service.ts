@@ -11,6 +11,7 @@ import { UpdateStatusDto } from './dto/update-status.dto';
 import { CartService } from 'src/cart/cart.service';
 import { PlaceFromCartDto } from './dto/place-from-cart.dto';
 import { ReorderDto } from './dto/reorder.dto';
+import { OrdersGateway } from './orders.gateway';
 
 type OrderTransitionMap = {
   [K in OrderStatus]?: OrderStatus[];
@@ -51,6 +52,7 @@ export class OrdersService {
   constructor(
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
     private readonly cartService: CartService,
+    private readonly orderGateway: OrdersGateway,
   ) {}
 
   async placeOrder(userId: string, dto: PlaceOrderDto) {
@@ -177,7 +179,7 @@ export class OrdersService {
     order.status = dto.status;
     await order.save();
 
-    // TODO: Trigger WebSocket/event notofication
+    this.orderGateway.emitOrderStatusUpdate(id, dto.status);
 
     return order;
   }
@@ -203,7 +205,13 @@ export class OrdersService {
       throw new BadRequestException(`Cannot cancel at this state`);
 
     order.status = OrderStatus['CANCEL_REQUEST'];
-    return await order.save();
+    await order.save();
+    this.orderGateway.emitOrderStatusUpdate(
+      orderId,
+      OrderStatus['CANCEL_REQUEST'],
+    );
+
+    return order;
   }
 
   async approveOrRejectCancel(orderId: string, status: OrderStatus) {
@@ -216,6 +224,8 @@ export class OrdersService {
       throw new BadRequestException(`Cannot cancel or reject at this state`);
 
     order.status = status;
-    return await order.save();
+    await order.save();
+    this.orderGateway.emitOrderStatusUpdate(orderId, status);
+    return order;
   }
 }

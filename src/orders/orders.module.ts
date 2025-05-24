@@ -6,6 +6,7 @@ import { Order, OrderSchema } from './schemas/order.schema';
 import { Cart, CartSchema } from 'src/cart/schemas/cart.schema';
 import { CartController } from 'src/cart/cart.controller';
 import { CartService } from 'src/cart/cart.service';
+import { OrdersGateway } from './orders.gateway';
 
 @Module({
   imports: [
@@ -15,6 +16,6 @@ import { CartService } from 'src/cart/cart.service';
     ]),
   ],
   controllers: [OrdersController, CartController],
-  providers: [OrdersService, CartService],
+  providers: [OrdersService, CartService, OrdersGateway],
 })
 export class OrdersModule {}
