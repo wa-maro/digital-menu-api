@@ -78,4 +78,8 @@ export class OrdersService {
 
     return order;
   }
+
+  async getAllOrders() {
+    return await this.orderModel.find().exec();
+  }
 }

@@ -15,13 +15,13 @@ import { AuthGuard } from '@nestjs/passport';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RoleGuard } from 'src/common/guards/roles.guard';
 
-@UseGuards(AuthGuard('jwt'), RoleGuard)
-@Roles('admin', 'manager')
 @Controller('menu')
 export class MenuController {
   constructor(private readonly menuService: MenuService) {}
 
   // Categories
+  @UseGuards(AuthGuard('jwt'), RoleGuard)
+  @Roles('admin', 'manager')
   @Post('categories')
   createCategory(@Body() dto: CreateCategoryDto) {
     return this.menuService.createCategory(dto);
@@ -32,6 +32,8 @@ export class MenuController {
     return this.menuService.getCategories();
   }
 
+  @UseGuards(AuthGuard('jwt'), RoleGuard)
+  @Roles('admin', 'manager')
   @Put('categories/:id')
   updateCategory(
     @Param('id') id: string,
@@ -40,12 +42,16 @@ export class MenuController {
     return this.menuService.updateCategory(id, dto);
   }
 
+  @UseGuards(AuthGuard('jwt'), RoleGuard)
+  @Roles('admin', 'manager')
   @Delete('categories/:id')
   delete(@Param('id') id: string) {
     return this.menuService.deleteCategory(id);
   }
 
   // Items
+  @UseGuards(AuthGuard('jwt'), RoleGuard)
+  @Roles('admin', 'manager')
   @Post('items')
   createItem(@Body() dto: CreateItemDto) {
     return this.menuService.createItem(dto);
@@ -56,11 +62,15 @@ export class MenuController {
     return this.menuService.getItems();
   }
 
+  @UseGuards(AuthGuard('jwt'), RoleGuard)
+  @Roles('admin', 'manager')
   @Put('items/:id')
   updateItem(@Param('id') id: string, @Body() dto: Partial<CreateItemDto>) {
     return this.menuService.updateItem(id, dto);
   }
 
+  @UseGuards(AuthGuard('jwt'), RoleGuard)
+  @Roles('admin', 'manager')
   @Delete('items/:id')
   deleteItem(@Param('id') id: string) {
     return this.menuService.deleteItem(id);
