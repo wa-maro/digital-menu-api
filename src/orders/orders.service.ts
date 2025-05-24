@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Order, OrderDocument } from './schemas/order.schema';
 import { isValidObjectId, Model } from 'mongoose';
 import { PlaceOrderDto } from './dto/place-order.dto';
+import { UpdateStatusDto } from './dto/update-status.dto';
 
 @Injectable()
 export class OrdersService {
@@ -63,6 +64,17 @@ export class OrdersService {
 
     if (!order)
       throw new NotFoundException(`Order with ID ${id} doesn't exist`);
+
+    return order;
+  }
+
+  async updateStatus(id: string, dto: UpdateStatusDto) {
+    const order = await this.orderModel.findByIdAndUpdate(
+      id,
+      { status: dto.status },
+      { new: true },
+    );
+    if (!order) throw new NotFoundException(`Order with ID ${id} not found`);
 
     return order;
   }
