@@ -9,6 +9,7 @@ import { isValidObjectId, Model, Types } from 'mongoose';
 import { PlaceOrderDto } from './dto/place-order.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { CartService } from 'src/cart/cart.service';
+import { PlaceFromCartDto } from './dto/place-from-cart.dto';
 
 @Injectable()
 export class OrdersService {
@@ -42,7 +43,7 @@ export class OrdersService {
     });
   }
 
-  async placeOrderFromCart(userId: string, orderType: OrderType) {
+  async placeOrderFromCart(userId: string, dto: PlaceFromCartDto) {
     const cart = await this.cartService.getUserCart(userId);
     if (!cart) throw new NotFoundException('Cart is empty');
 
@@ -60,7 +61,8 @@ export class OrdersService {
     const order = new this.orderModel({
       user: userId,
       items,
-      type: orderType,
+      type: dto.type,
+      deliveryAddress: dto.deliveryAddress,
       total,
     });
     await order.save();

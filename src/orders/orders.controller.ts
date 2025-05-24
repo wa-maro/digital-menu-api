@@ -17,16 +17,13 @@ import { RoleGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
 import { Permissions } from 'src/common/decorators/permissions.decorator';
-import { CartService } from 'src/cart/cart.service';
 import { OrderType } from './schemas/order.schema';
+import { PlaceFromCartDto } from './dto/place-from-cart.dto';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard, PermissionsGuard)
 @Controller('orders')
 export class OrdersController {
-  constructor(
-    private readonly ordersService: OrdersService,
-    private readonly cartService: CartService,
-  ) {}
+  constructor(private readonly ordersService: OrdersService) {}
 
   @Roles('admin', 'manager', 'customer')
   @Permissions('order:place')
@@ -39,10 +36,10 @@ export class OrdersController {
   @Permissions('order:place-from-cart')
   @Post('place-from-cart')
   placeOrderFromCart(
-    @Query('orderType') orderType: OrderType,
+    @Body() dto: PlaceFromCartDto,
     @Req() req: CustomRequest,
   ) {
-    return this.ordersService.placeOrderFromCart(req.user['userId'], orderType);
+    return this.ordersService.placeOrderFromCart(req.user['userId'], dto);
   }
 
   @Roles('customer')
