@@ -4,15 +4,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Order, OrderDocument } from './schemas/order.schema';
-import { isValidObjectId, Model } from 'mongoose';
+import { Order, OrderDocument, OrderType } from './schemas/order.schema';
+import { isValidObjectId, Model, Types } from 'mongoose';
 import { PlaceOrderDto } from './dto/place-order.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { CartService } from 'src/cart/cart.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
+    private readonly cartService: CartService,
   ) {}
 
   async placeOrder(userId: string, dto: PlaceOrderDto) {
@@ -38,6 +40,33 @@ export class OrdersService {
       deliveryAddress: dto.deliveryAddress,
       total,
     });
+  }
+
+  async placeOrderFromCart(userId: string, orderType: OrderType) {
+    const cart = await this.cartService.getUserCart(userId);
+    if (!cart) throw new NotFoundException('Cart is empty');
+
+    const items = cart.items.map((i) => ({
+      item: new Types.ObjectId(i.item),
+      quantity: i.quantity,
+      customizations: i.customizations,
+      price: i.price,
+    }));
+    const total = items.reduce(
+      (sum, { quantity, price }) => sum + quantity * price,
+      0,
+    );
+
+    const order = new this.orderModel({
+      user: userId,
+      items,
+      type: orderType,
+      total,
+    });
+    await order.save();
+    await this.cartService.clearCart(userId);
+
+    return order;
   }
 
   async getUserOrders(userId: string) {

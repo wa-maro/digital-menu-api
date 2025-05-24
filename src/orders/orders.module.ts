@@ -10,8 +10,8 @@ import { CartService } from 'src/cart/cart.service';
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: Cart.name, schema: CartSchema },
       { name: Order.name, schema: OrderSchema },
+      { name: Cart.name, schema: CartSchema },
     ]),
   ],
   controllers: [OrdersController, CartController],
