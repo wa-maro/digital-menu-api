@@ -19,6 +19,7 @@ import { Permissions } from 'src/common/decorators/permissions.decorator';
 import { PlaceFromCartDto } from './dto/place-from-cart.dto';
 import { ReorderDto } from './dto/reorder.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { OrderStatus } from './schemas/order.schema';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard, PermissionsGuard)
 @Controller('orders')
@@ -95,7 +96,7 @@ export class OrdersController {
 
   @Roles('manager', 'admin')
   @Post(':id/approve-to-cancel')
-  async approveCancel(@Param('id') id: string) {
-    return await this.ordersService.approveCancel(id);
+  async approveCancel(@Param('id') id: string, @Body() status: OrderStatus) {
+    return await this.ordersService.approveOrRejectCancel(id, status);
   }
 }

@@ -21,6 +21,7 @@ export enum OrderStatus {
   COMPLETED = 'completed',
   CANCEL_REQUEST = 'cancel_request',
   CANCELLED = 'cancelled',
+  REJECTED_CANCEL_REQUEST = 'rejected_cancel_request',
   FAILED = 'failed',
 }
 
