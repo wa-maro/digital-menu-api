@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -16,12 +17,16 @@ import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { RoleGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { AuthGuard } from '@nestjs/passport';
+import { OrdersService } from 'src/orders/orders.service';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @Roles('admin', 'manager', 'customer')
 @Controller('cart')
 export class CartController {
-  constructor(private readonly cartService: CartService) {}
+  constructor(
+    private readonly cartService: CartService,
+    private readonly ordersService: OrdersService,
+  ) {}
 
   @Get()
   getCart(@Req() req: CustomRequest) {
@@ -50,5 +55,18 @@ export class CartController {
   @Delete()
   clearCart(@Req() req: CustomRequest) {
     return this.cartService.clearCart(req.user['userId']);
+  }
+
+  @Post('reorder/:orderId')
+  async reorderToCart(
+    @Param('orderId') orderId: string,
+    @Query('merge') merge: 'false' | 'true' = 'false',
+    @Req() req: CustomRequest,
+  ) {
+    const order = await this.ordersService.getOrderById(
+      orderId,
+      req.user['userId'],
+    );
+    return await this.cartService.createCartFromCart(order, merge === 'true');
   }
 }

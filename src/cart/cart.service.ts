@@ -4,6 +4,7 @@ import { Cart, CartDocument } from './schemas/cart.schema';
 import { Model, Types } from 'mongoose';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
+import { Order } from 'src/orders/schemas/order.schema';
 
 @Injectable()
 export class CartService {
@@ -70,5 +71,30 @@ export class CartService {
     if (!cart) throw new NotFoundException('Cart Not Found');
 
     return cart;
+  }
+
+  async createCartFromCart(order: Order, merge = false) {
+    const clonedItems = order.items.map((i) => ({
+      item: i.item,
+      quantity: i.quantity,
+      customizations: i.customizations,
+      price: i.price,
+    }));
+
+    let newCart = await this.cartModel.findOne({ user: order.user });
+    if (!newCart) newCart = new this.cartModel({ user: order.user, items: [] });
+
+    if (!merge) newCart.items = clonedItems;
+    else {
+      for (const newItem of clonedItems) {
+        const existing = newCart.items.find(
+          (i) => i.item.toString() === newCart.items.toString(),
+        );
+        if (existing) existing.quantity += newItem.quantity;
+        else newCart.items.push(newItem);
+      }
+    }
+
+    return await newCart.save();
   }
 }
