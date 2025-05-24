@@ -18,6 +18,7 @@ import { PermissionsGuard } from 'src/common/guards/permissions.guard';
 import { Permissions } from 'src/common/decorators/permissions.decorator';
 import { PlaceFromCartDto } from './dto/place-from-cart.dto';
 import { ReorderDto } from './dto/reorder.dto';
+import { UpdateStatusDto } from './dto/update-status.dto';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard, PermissionsGuard)
 @Controller('orders')
@@ -74,10 +75,9 @@ export class OrdersController {
   @Put(':id/status')
   async updateOrderStatus(
     @Param('id') id: string,
-    @Body() dto,
-    @Req() req: Request,
+    @Body() dto: UpdateStatusDto,
   ) {
-    return await this.ordersService.updateStatus(id, dto.status);
+    return await this.ordersService.updateOrderStatus(id, dto);
   }
 
   @Get('all')

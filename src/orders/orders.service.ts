@@ -4,13 +4,42 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Order, OrderDocument, OrderType } from './schemas/order.schema';
+import { Order, OrderDocument, OrderStatus } from './schemas/order.schema';
 import { isValidObjectId, Model, Types } from 'mongoose';
 import { PlaceOrderDto } from './dto/place-order.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { CartService } from 'src/cart/cart.service';
 import { PlaceFromCartDto } from './dto/place-from-cart.dto';
 import { ReorderDto } from './dto/reorder.dto';
+
+type OrderTransitionMap = {
+  [K in OrderStatus]?: OrderStatus[];
+};
+
+export const allowedOrderTransitionMap: OrderTransitionMap = {
+  [OrderStatus.PENDING]: [
+    OrderStatus.CONFIRMED,
+    OrderStatus.CANCELLED,
+    OrderStatus.FAILED,
+  ],
+  [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
+  [OrderStatus.PREPARING]: [OrderStatus.READY],
+  [OrderStatus.READY]: [
+    OrderStatus.COMPLETED, // ORDER TYPE = DINE-IN
+    OrderStatus.PICKED, // ORDER TYPE = TAKEAWAY
+    OrderStatus.OUT_FOR_DELIVERY, // ORDER TYPE = DELIVERY
+  ],
+  [OrderStatus.PICKED]: [OrderStatus.COMPLETED],
+  [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED],
+  [OrderStatus.DELIVERED]: [OrderStatus.COMPLETED],
+  [OrderStatus.COMPLETED]: [],
+  [OrderStatus.CANCELLED]: [],
+  [OrderStatus.FAILED]: [],
+};
+
+export function canStatusTransit(from: OrderStatus, to: OrderStatus): boolean {
+  return allowedOrderTransitionMap[from]?.includes(to) ?? false;
+}
 
 @Injectable()
 export class OrdersService {
@@ -129,18 +158,31 @@ export class OrdersService {
     return order;
   }
 
-  async updateStatus(id: string, dto: UpdateStatusDto) {
-    const order = await this.orderModel.findByIdAndUpdate(
-      id,
-      { status: dto.status },
-      { new: true },
-    );
+  async updateOrderStatus(id: string, dto: UpdateStatusDto) {
+    const order = await this.orderModel.findById(id);
     if (!order) throw new NotFoundException(`Order with ID ${id} not found`);
+
+    const isValidNext = canStatusTransit(order.status, dto.status);
+
+    if (!isValidNext)
+      throw new BadRequestException(
+        `Invalid status transition from ${order.status} to ${dto.status}`,
+      );
+
+    order.status = dto.status;
+    await order.save();
+
+    // TODO: Trigger WebSocket/event notofication
 
     return order;
   }
 
   async getAllOrders() {
-    return await this.orderModel.find().exec();
+    return await this.orderModel
+      .find()
+      .populate('user', 'email role')
+      .populate('items.item', 'name price')
+      .sort({ createdAt: -1 })
+      .exec();
   }
 }

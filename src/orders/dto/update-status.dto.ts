@@ -3,5 +3,5 @@ import { OrderStatus } from '../schemas/order.schema';
 
 export class UpdateStatusDto {
   @IsEnum(OrderStatus)
-  status: string;
+  status: OrderStatus;
 }
