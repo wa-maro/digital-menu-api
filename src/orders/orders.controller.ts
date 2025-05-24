@@ -86,4 +86,16 @@ export class OrdersController {
   async getAllOrders() {
     return await this.ordersService.getAllOrders();
   }
+
+  @Roles('customer')
+  @Post(':id/request-to-cancel')
+  async requestCancel(@Param('id') id: string, @Req() req: CustomRequest) {
+    return await this.ordersService.requestCancel(id, req.user['userId']);
+  }
+
+  @Roles('manager', 'admin')
+  @Post(':id/approve-to-cancel')
+  async approveCancel(@Param('id') id: string) {
+    return await this.ordersService.approveCancel(id);
+  }
 }

@@ -19,6 +19,7 @@ export enum OrderStatus {
   DELIVERED = 'delivered',
   PICKED = 'picked',
   COMPLETED = 'completed',
+  CANCEL_REQUEST = 'cancel_request',
   CANCELLED = 'cancelled',
   FAILED = 'failed',
 }

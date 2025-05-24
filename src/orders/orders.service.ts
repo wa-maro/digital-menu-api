@@ -19,10 +19,11 @@ type OrderTransitionMap = {
 export const allowedOrderTransitionMap: OrderTransitionMap = {
   [OrderStatus.PENDING]: [
     OrderStatus.CONFIRMED,
-    OrderStatus.CANCELLED,
+    OrderStatus.CANCEL_REQUEST,
     OrderStatus.FAILED,
   ],
-  [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
+  [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCEL_REQUEST],
+  [OrderStatus.CANCEL_REQUEST]: [OrderStatus.CANCELLED],
   [OrderStatus.PREPARING]: [OrderStatus.READY],
   [OrderStatus.READY]: [
     OrderStatus.COMPLETED, // ORDER TYPE = DINE-IN
@@ -184,5 +185,36 @@ export class OrdersService {
       .populate('items.item', 'name price')
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  async requestCancel(orderId: string, userId: string) {
+    const order = await this.getOrderById(orderId, userId);
+
+    const isValidNext = canStatusTransit(
+      order.status,
+      OrderStatus['CANCEL_REQUEST'],
+    );
+
+    if (!isValidNext)
+      throw new BadRequestException(`Cannot cancel at this state`);
+
+    order.status = OrderStatus['CANCEL_REQUEST'];
+    return await order.save();
+  }
+
+  async approveCancel(orderId: string) {
+    const order = await this.orderModel.findById(orderId);
+    if (!order) throw new NotFoundException('Order not found');
+
+    const isValidNext = canStatusTransit(
+      order.status,
+      OrderStatus['CANCELLED'],
+    );
+
+    if (!isValidNext)
+      throw new BadRequestException(`Cannot cancel at this state`);
+
+    order.status = OrderStatus['CANCELLED'];
+    return await order.save();
   }
 }
