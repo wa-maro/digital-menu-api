@@ -1,4 +1,10 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateIf,
+} from 'class-validator';
 import { OrderType } from '../schemas/order.schema';
 
 export class PlaceFromCartDto {
@@ -7,7 +13,8 @@ export class PlaceFromCartDto {
   })
   type: string;
 
-  @IsOptional()
+  @ValidateIf((o) => o.type === OrderType.DELIVERY)
+  @IsNotEmpty({ message: 'Delivery address is required for derlivery orders' })
   @IsString()
   deliveryAddress?: string;
 }

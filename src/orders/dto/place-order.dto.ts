@@ -1,8 +1,10 @@
 import {
   IsArray,
   IsEnum,
+  IsNotEmpty,
   IsOptional,
   IsString,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { OrderType } from '../schemas/order.schema';
@@ -20,7 +22,8 @@ export class PlaceOrderDto {
   })
   type: string;
 
-  @IsOptional()
+  @ValidateIf((o) => o.type === OrderType.DELIVERY)
+  @IsNotEmpty({ message: 'Delivery address is required for derlivery orders' })
   @IsString()
   deliveryAddress?: string;
 }
