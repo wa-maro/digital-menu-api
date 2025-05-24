@@ -44,7 +44,7 @@ export class Order {
   status: OrderStatus;
 
   @Prop()
-  deriveryAddress?: string;
+  deliveryAddress?: string;
 
   @Prop({ required: true })
   total: number;

@@ -10,6 +10,7 @@ import { PlaceOrderDto } from './dto/place-order.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { CartService } from 'src/cart/cart.service';
 import { PlaceFromCartDto } from './dto/place-from-cart.dto';
+import { ReorderDto } from './dto/reorder.dto';
 
 @Injectable()
 export class OrdersService {
@@ -69,6 +70,35 @@ export class OrdersService {
     await this.cartService.clearCart(userId);
 
     return order;
+  }
+
+  async reorderFromPast(userId: string, orderId: string, dto: ReorderDto) {
+    const previousOrder = await this.orderModel.findOne({
+      _id: orderId,
+      user: userId,
+    });
+    if (!previousOrder) throw new NotFoundException('Order not found');
+
+    const clonedItem = previousOrder.items.map((i) => ({
+      item: i.item,
+      quantity: i.quantity,
+      customizations: i.customizations,
+      price: i.price,
+    }));
+    const total = clonedItem.reduce(
+      (sum, { quantity, price }) => sum + quantity * price,
+      0,
+    );
+
+    const newOrder = new this.orderModel({
+      user: userId,
+      items: clonedItem,
+      type: dto.type || previousOrder.type,
+      deliveryAddress: dto.deliveryAddress || previousOrder.deliveryAddress,
+      total,
+    });
+
+    return newOrder.save();
   }
 
   async getUserOrders(userId: string) {

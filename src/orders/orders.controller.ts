@@ -5,7 +5,6 @@ import {
   Param,
   Post,
   Put,
-  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -17,8 +16,8 @@ import { RoleGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
 import { Permissions } from 'src/common/decorators/permissions.decorator';
-import { OrderType } from './schemas/order.schema';
 import { PlaceFromCartDto } from './dto/place-from-cart.dto';
+import { ReorderDto } from './dto/reorder.dto';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard, PermissionsGuard)
 @Controller('orders')
@@ -35,11 +34,18 @@ export class OrdersController {
   @Roles('admin', 'manager', 'customer')
   @Permissions('order:place-from-cart')
   @Post('place-from-cart')
-  placeOrderFromCart(
-    @Body() dto: PlaceFromCartDto,
+  placeOrderFromCart(@Body() dto: PlaceFromCartDto, @Req() req: CustomRequest) {
+    return this.ordersService.placeOrderFromCart(req.user['userId'], dto);
+  }
+
+  @Roles('admin', 'manager', 'customer')
+  @Post(':orderId/reorder-from-past')
+  reorderFromPast(
+    @Param('orderId') orderId: string,
+    @Body() dto: ReorderDto,
     @Req() req: CustomRequest,
   ) {
-    return this.ordersService.placeOrderFromCart(req.user['userId'], dto);
+    return this.ordersService.reorderFromPast(req.user['userId'], orderId, dto);
   }
 
   @Roles('customer')
