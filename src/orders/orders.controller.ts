@@ -27,52 +27,63 @@ export class OrdersController {
   @Roles('admin', 'manager', 'customer')
   @Permissions('order:place')
   @Post()
-  placeOrder(@Body() dto: PlaceOrderDto, @Req() req: CustomRequest) {
-    return this.ordersService.placeOrder(req.user['userId'], dto);
+  async placeOrder(@Body() dto: PlaceOrderDto, @Req() req: CustomRequest) {
+    return await this.ordersService.placeOrder(req.user['userId'], dto);
   }
 
   @Roles('admin', 'manager', 'customer')
   @Permissions('order:place-from-cart')
   @Post('place-from-cart')
-  placeOrderFromCart(@Body() dto: PlaceFromCartDto, @Req() req: CustomRequest) {
-    return this.ordersService.placeOrderFromCart(req.user['userId'], dto);
+  async placeOrderFromCart(
+    @Body() dto: PlaceFromCartDto,
+    @Req() req: CustomRequest,
+  ) {
+    return await this.ordersService.placeOrderFromCart(req.user['userId'], dto);
   }
 
   @Roles('admin', 'manager', 'customer')
   @Post(':orderId/reorder-from-past')
-  reorderFromPast(
+  async reorderFromPast(
     @Param('orderId') orderId: string,
     @Body() dto: ReorderDto,
     @Req() req: CustomRequest,
   ) {
-    return this.ordersService.reorderFromPast(req.user['userId'], orderId, dto);
+    return await this.ordersService.reorderFromPast(
+      req.user['userId'],
+      orderId,
+      dto,
+    );
   }
 
   @Roles('customer')
   @Permissions('order:read:own')
   @Get()
-  getMyOrders(@Req() req: CustomRequest) {
-    return this.ordersService.getUserOrders(req.user['userId']);
+  async getMyOrders(@Req() req: CustomRequest) {
+    return await this.ordersService.getUserOrders(req.user['userId']);
   }
 
   @Roles('admin', 'manager', 'customer')
   @Permissions('order:read')
   @Get(':id')
-  getOrder(@Param('id') id: string, @Req() req: CustomRequest) {
-    return this.ordersService.getOrderById(id, req.user['userId']);
+  async getOrder(@Param('id') id: string, @Req() req: CustomRequest) {
+    return await this.ordersService.getOrderById(id, req.user['userId']);
   }
 
   @Roles('manager', 'admin')
   @Permissions('order:update:status')
   @Put(':id/status')
-  updateOrderStatus(@Param('id') id: string, @Body() dto, @Req() req: Request) {
-    return this.ordersService.updateStatus(id, dto.status);
+  async updateOrderStatus(
+    @Param('id') id: string,
+    @Body() dto,
+    @Req() req: Request,
+  ) {
+    return await this.ordersService.updateStatus(id, dto.status);
   }
 
   @Get('all')
   @Roles('manager', 'admin')
   @Permissions('order:read:all')
-  getAllOrders() {
-    return this.ordersService.getAllOrders();
+  async getAllOrders() {
+    return await this.ordersService.getAllOrders();
   }
 }

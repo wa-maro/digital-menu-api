@@ -29,32 +29,36 @@ export class CartController {
   ) {}
 
   @Get()
-  getCart(@Req() req: CustomRequest) {
-    return this.cartService.getUserCart(req.user['userId']);
+  async getCart(@Req() req: CustomRequest) {
+    return await this.cartService.getUserCart(req.user['userId']);
   }
 
   @Post()
-  addItem(@Body() dto: AddToCartDto, @Req() req: CustomRequest) {
-    return this.cartService.addItem(req.user['userId'], dto);
+  async addItem(@Body() dto: AddToCartDto, @Req() req: CustomRequest) {
+    return await this.cartService.addItem(req.user['userId'], dto);
   }
 
   @Patch(':itemId')
-  updateItem(
+  async updateItem(
     @Param('itemId') itemId: string,
     @Body() dto: UpdateCartItemDto,
     @Req() req: CustomRequest,
   ) {
-    return this.cartService.updateItemQuantity(req.user['userId'], itemId, dto);
+    return await this.cartService.updateItemQuantity(
+      req.user['userId'],
+      itemId,
+      dto,
+    );
   }
 
   @Delete('itemId')
-  removeItem(@Param('itemId') itemId: string, @Req() req: CustomRequest) {
-    return this.cartService.removeItem(req.user['userId'], itemId);
+  async removeItem(@Param('itemId') itemId: string, @Req() req: CustomRequest) {
+    return await this.cartService.removeItem(req.user['userId'], itemId);
   }
 
   @Delete()
-  clearCart(@Req() req: CustomRequest) {
-    return this.cartService.clearCart(req.user['userId']);
+  async clearCart(@Req() req: CustomRequest) {
+    return await this.cartService.clearCart(req.user['userId']);
   }
 
   @Post('reorder/:orderId')

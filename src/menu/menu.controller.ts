@@ -26,32 +26,32 @@ export class MenuController {
   @Roles('admin', 'manager')
   @Permissions('category:create')
   @Post('categories')
-  createCategory(@Body() dto: CreateCategoryDto) {
-    return this.menuService.createCategory(dto);
+  async createCategory(@Body() dto: CreateCategoryDto) {
+    return await this.menuService.createCategory(dto);
   }
 
   @Get('categories')
-  getCategories() {
-    return this.menuService.getCategories();
+  async getCategories() {
+    return await this.menuService.getCategories();
   }
 
   @UseGuards(AuthGuard('jwt'), RoleGuard, PermissionsGuard)
   @Roles('admin', 'manager')
   @Permissions('category:update')
   @Put('categories/:id')
-  updateCategory(
+  async updateCategory(
     @Param('id') id: string,
     @Body() dto: Partial<CreateCategoryDto>,
   ) {
-    return this.menuService.updateCategory(id, dto);
+    return await this.menuService.updateCategory(id, dto);
   }
 
   @UseGuards(AuthGuard('jwt'), RoleGuard, PermissionsGuard)
   @Roles('admin', 'manager')
   @Permissions('category:delete')
   @Delete('categories/:id')
-  delete(@Param('id') id: string) {
-    return this.menuService.deleteCategory(id);
+  async delete(@Param('id') id: string) {
+    return await this.menuService.deleteCategory(id);
   }
 
   // Items
@@ -59,28 +59,31 @@ export class MenuController {
   @Roles('admin', 'manager')
   @Permissions('item:create')
   @Post('items')
-  createItem(@Body() dto: CreateItemDto) {
-    return this.menuService.createItem(dto);
+  async createItem(@Body() dto: CreateItemDto) {
+    return await this.menuService.createItem(dto);
   }
 
   @Get('items')
-  getItems() {
-    return this.menuService.getItems();
+  async getItems() {
+    return await this.menuService.getItems();
   }
 
   @UseGuards(AuthGuard('jwt'), RoleGuard, PermissionsGuard)
   @Roles('admin', 'manager')
   @Permissions('item:update')
   @Put('items/:id')
-  updateItem(@Param('id') id: string, @Body() dto: Partial<CreateItemDto>) {
-    return this.menuService.updateItem(id, dto);
+  async updateItem(
+    @Param('id') id: string,
+    @Body() dto: Partial<CreateItemDto>,
+  ) {
+    return await this.menuService.updateItem(id, dto);
   }
 
   @UseGuards(AuthGuard('jwt'), RoleGuard, PermissionsGuard)
   @Roles('admin', 'manager')
   @Permissions('item:delete')
   @Delete('items/:id')
-  deleteItem(@Param('id') id: string) {
-    return this.menuService.deleteItem(id);
+  async deleteItem(@Param('id') id: string) {
+    return await this.menuService.deleteItem(id);
   }
 }
