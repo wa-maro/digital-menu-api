@@ -9,6 +9,8 @@ import { MenuItem, MenuItemDocument } from './schemas/item.schema';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { CreateItemDto } from './dto/create-item.dto';
 import { isValidObjectId, Model } from 'mongoose';
+import { UpdateCategoryDto } from './dto/update-category.dto';
+import { UpdateItemDto } from './dto/update-item.dto';
 
 @Injectable()
 export class MenuService {
@@ -32,7 +34,7 @@ export class MenuService {
     return await this.categoryModel.find().exec();
   }
 
-  async updateCategory(id: string, dto: Partial<CreateCategoryDto>) {
+  async updateCategory(id: string, dto: UpdateCategoryDto) {
     if (!isValidObjectId(id))
       throw new BadRequestException(`Invalid category ID: ${id}`);
 
@@ -71,7 +73,17 @@ export class MenuService {
     return await this.itemModel.find().populate('category').exec();
   }
 
-  async updateItem(id: string, dto: Partial<CreateItemDto>) {
+  async getItem(id: string) {
+    if (!isValidObjectId(id))
+      throw new BadRequestException(`Invalid item ID: ${id}`);
+
+    const item = await this.itemModel.findById(id).populate('category').exec();
+    if (!item) throw new NotFoundException(`Item with ID "${id}" not found.`);
+
+    return item;
+  }
+
+  async updateItem(id: string, dto: UpdateItemDto) {
     if (!isValidObjectId(id))
       throw new BadRequestException(`Invalid item ID: ${id}`);
 
