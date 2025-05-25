@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { User, UserDocument } from 'src/users/user.schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -15,32 +19,36 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    // check if user already exist
-    const existingUser = await this.userModel.findOne({ email: dto.email });
-    if (existingUser) throw new UnauthorizedException('User already exists');
+    try {
+      // check if user already exist
+      const existingUser = await this.userModel.findOne({ email: dto.email });
+      if (existingUser) return new ConflictException('User already exists');
 
-    // encrypt the password
-    const hashed = await bcrypt.hash(dto.password, 10);
+      // encrypt the password
+      const hashed = await bcrypt.hash(dto.password, 10);
 
-    // create a new user
-    const user = await this.userModel.create({
-      fullName: dto.fullName,
-      email: dto.email,
-      passwordHash: hashed,
-    });
+      // create a new user
+      const user = await this.userModel.create({
+        fullName: dto.fullName,
+        email: dto.email,
+        passwordHash: hashed,
+      });
 
-    // return registered user as a payload
-    return this.signPayload(user);
+      // return registered user as a payload
+      return this.signPayload(user);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async login(dto: LoginDto) {
     // check if user already exist
     const user = await this.userModel.findOne({ email: dto.email });
-    if (!user) throw new UnauthorizedException("User doesn't exists");
+    if (!user) return new ConflictException("User doesn't exists");
 
     // compare the password with stored hash
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!valid) throw new UnauthorizedException('Wrong credentials');
+    if (!valid) return new UnauthorizedException('Wrong credentials');
 
     // return valid user as payload
     return this.signPayload(user);
