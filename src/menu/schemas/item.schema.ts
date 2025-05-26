@@ -19,6 +19,9 @@ export class MenuItem {
 
   @Prop({ type: Types.ObjectId, ref: 'Category', required: true })
   category: Types.ObjectId;
+
+  @Prop()
+  imageURL: string;
 }
 
 export const MenuItemSchema = SchemaFactory.createForClass(MenuItem);
