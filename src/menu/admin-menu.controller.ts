@@ -5,7 +5,6 @@ import {
   Param,
   Put,
   Post,
-  Get,
   UseGuards,
 } from '@nestjs/common';
 import { MenuService } from './menu.service';
@@ -16,37 +15,23 @@ import { UpdateItemDto } from './dto/update-item.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { RoleGuard } from 'src/common/guards/roles.guard';
+import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { Permissions } from 'src/common/decorators/permissions.decorator';
 
+@UseGuards(AuthGuard('jwt'), RoleGuard, PermissionsGuard)
+@Roles('manager', 'admin')
 @Controller('menu')
-export class MenuController {
+export class AdminMenuController {
   constructor(private readonly menuService: MenuService) {}
 
-  // Public GET endpoints
-  @Get('categories')
-  async getCategories() {
-    return await this.menuService.getCategories();
-  }
-
-  @Get('items')
-  async getItems() {
-    return await this.menuService.getItems();
-  }
-
-  @Get('items/:id')
-  async getItem(@Param('id') id: string) {
-    return await this.menuService.getItem(id);
-  }
-
-  // Protected Category endpoints
-  @UseGuards(AuthGuard('jwt'), RoleGuard)
-  @Roles('manager', 'admin')
+  // Categories
+  @Permissions('menu:create:category')
   @Post('categories')
   async createCategory(@Body() dto: CreateCategoryDto) {
     return await this.menuService.createCategory(dto);
   }
 
-  @UseGuards(AuthGuard('jwt'), RoleGuard)
-  @Roles('manager', 'admin')
+  @Permissions('menu:update:category')
   @Put('categories/:id')
   async updateCategory(
     @Param('id') id: string,
@@ -55,30 +40,26 @@ export class MenuController {
     return await this.menuService.updateCategory(id, dto);
   }
 
-  @UseGuards(AuthGuard('jwt'), RoleGuard)
-  @Roles('manager', 'admin')
+  @Permissions('menu:delete:category')
   @Delete('categories/:id')
   async deleteCategory(@Param('id') id: string) {
     return await this.menuService.deleteCategory(id);
   }
 
-  // Protected Item endpoints
-  @UseGuards(AuthGuard('jwt'), RoleGuard)
-  @Roles('manager', 'admin')
+  // Items
+  @Permissions('menu:create:item')
   @Post('items')
   async createItem(@Body() dto: CreateItemDto) {
     return await this.menuService.createItem(dto);
   }
 
-  @UseGuards(AuthGuard('jwt'), RoleGuard)
-  @Roles('manager', 'admin')
+  @Permissions('menu:update:item')
   @Put('items/:id')
   async updateItem(@Param('id') id: string, @Body() dto: UpdateItemDto) {
     return await this.menuService.updateItem(id, dto);
   }
 
-  @UseGuards(AuthGuard('jwt'), RoleGuard)
-  @Roles('manager', 'admin')
+  @Permissions('menu:delete:item')
   @Delete('items/:id')
   async deleteItem(@Param('id') id: string) {
     return await this.menuService.deleteItem(id);
