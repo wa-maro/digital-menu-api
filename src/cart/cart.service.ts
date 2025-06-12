@@ -8,7 +8,9 @@ import { Order } from 'src/orders/schemas/order.schema';
 
 @Injectable()
 export class CartService {
-  constructor(@InjectModel(Cart.name) private cartModel: Model<CartDocument>) {}
+  constructor(
+    @InjectModel(Cart.name) private readonly cartModel: Model<Cart>,
+  ) {}
 
   async getUserCart(userId: string) {
     return await this.cartModel
@@ -88,7 +90,7 @@ export class CartService {
     else {
       for (const newItem of clonedItems) {
         const existing = newCart.items.find(
-          (i) => i.item.toString() === newCart.items.toString(),
+          (i) => i.item.toString() === newItem.item.toString(),
         );
         if (existing) existing.quantity += newItem.quantity;
         else newCart.items.push(newItem);
