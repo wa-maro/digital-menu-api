@@ -20,7 +20,7 @@ import { Permissions } from 'src/common/decorators/permissions.decorator';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard, PermissionsGuard)
 @Roles('manager', 'admin')
-@Controller('menu')
+@Controller('admin/menu')
 export class AdminMenuController {
   constructor(private readonly menuService: MenuService) {}
 
