@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { MenuService } from './menu.service';
-import { MenuController } from './menu.controller';
+import { PublicMenuController } from './public-menu.controller';
 import { Category, CategorySchema } from './schemas/category.schema';
 import { MenuItem, MenuItemSchema } from './schemas/item.schema';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AdminMenuController } from './admin-menu.controller';
 
 @Module({
   imports: [
@@ -13,6 +14,6 @@ import { MongooseModule } from '@nestjs/mongoose';
     ]),
   ],
   providers: [MenuService],
-  controllers: [MenuController],
+  controllers: [PublicMenuController, AdminMenuController],
 })
 export class MenuModule {}

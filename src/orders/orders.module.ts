@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
-import { OrdersController } from './orders.controller';
+import { CustomerOrdersController } from './customer-orders.controller';
 import { OrdersService } from './orders.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Order, OrderSchema } from './schemas/order.schema';
 import { Cart, CartSchema } from 'src/cart/schemas/cart.schema';
-import { CartController } from 'src/cart/cart.controller';
+import { CustomerCartController } from 'src/cart/customer-cart.controller';
 import { CartService } from 'src/cart/cart.service';
 import { OrdersGateway } from './orders.gateway';
+import { AdminOrdersController } from './admin-orders.controller';
 
 @Module({
   imports: [
@@ -15,7 +16,12 @@ import { OrdersGateway } from './orders.gateway';
       { name: Cart.name, schema: CartSchema },
     ]),
   ],
-  controllers: [OrdersController, CartController],
+  controllers: [
+    CustomerOrdersController,
+    AdminOrdersController,
+    CustomerCartController,
+  ],
   providers: [OrdersService, CartService, OrdersGateway],
+  exports: [OrdersService],
 })
 export class OrdersModule {}

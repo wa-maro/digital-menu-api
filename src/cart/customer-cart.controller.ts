@@ -20,9 +20,9 @@ import { AuthGuard } from '@nestjs/passport';
 import { OrdersService } from 'src/orders/orders.service';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
-@Roles('admin', 'manager', 'customer')
+@Roles('customer')
 @Controller('cart')
-export class CartController {
+export class CustomerCartController {
   constructor(
     private readonly cartService: CartService,
     private readonly ordersService: OrdersService,
@@ -30,12 +30,16 @@ export class CartController {
 
   @Get()
   async getCart(@Req() req: CustomRequest) {
+    console.log(req.bodyUsed);
+
     return await this.cartService.getUserCart(req.user['userId']);
   }
 
   @Post()
   async addItem(@Body() dto: AddToCartDto, @Req() req: CustomRequest) {
-    return await this.cartService.addItem(req.user['userId'], dto);
+    const userId = req.user['userId'];
+
+    return await this.cartService.addItem(userId, dto);
   }
 
   @Patch(':itemId')
@@ -51,7 +55,7 @@ export class CartController {
     );
   }
 
-  @Delete('itemId')
+  @Delete(':itemId')
   async removeItem(@Param('itemId') itemId: string, @Req() req: CustomRequest) {
     return await this.cartService.removeItem(req.user['userId'], itemId);
   }

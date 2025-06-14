@@ -159,8 +159,22 @@ export class OrdersService {
       .populate('items.item')
       .exec();
 
-    if (!order)
-      throw new NotFoundException(`Order with ID ${id} doesn't exist`);
+    if (!order) throw new NotFoundException(`Order doesn't exist`);
+
+    return order;
+  }
+
+  async getOrderByIdForAdmin(id: string) {
+    if (!isValidObjectId(id))
+      throw new BadRequestException(`Invalid order ID: ${id}`);
+
+    const order = await this.orderModel
+      .findById(id)
+      .populate('items.item')
+      .populate('user')
+      .exec();
+
+    if (!order) throw new NotFoundException('Order not found');
 
     return order;
   }
