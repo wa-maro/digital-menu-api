@@ -21,7 +21,7 @@ import { OrdersService } from 'src/orders/orders.service';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @Roles('customer')
-@Controller('cart')
+@Controller('customer/cart')
 export class CustomerCartController {
   constructor(
     private readonly cartService: CartService,
@@ -30,8 +30,6 @@ export class CustomerCartController {
 
   @Get()
   async getCart(@Req() req: CustomRequest) {
-    console.log(req.bodyUsed);
-
     return await this.cartService.getUserCart(req.user['userId']);
   }
 

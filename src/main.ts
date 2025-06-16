@@ -9,7 +9,7 @@ async function bootstrap() {
 
   const allowedOrigins = configService
     .get<string>('FRONTEND_ORIGIN')
-    ?.split(',') || ['http://localhost:5173'];
+    ?.split(',') || ['http://localhost:5173', 'http://127.0.0.1:5173'];
   const port = configService.get<number>('PORT') || 3000;
 
   app.enableCors({

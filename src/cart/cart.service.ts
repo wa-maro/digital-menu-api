@@ -9,13 +9,13 @@ import { Order } from 'src/orders/schemas/order.schema';
 @Injectable()
 export class CartService {
   constructor(
-    @InjectModel(Cart.name) private readonly cartModel: Model<Cart>,
+    @InjectModel(Cart.name) private readonly cartModel: Model<CartDocument>,
   ) {}
 
   async getUserCart(userId: string) {
     return await this.cartModel
       .findOne({ user: userId })
-      .populate('items-item')
+      .populate('items.item')
       .exec();
   }
 
