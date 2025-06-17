@@ -75,8 +75,9 @@ export class OrdersService {
       user: userId,
       items,
       type: dto.type,
-      deliveryAddress: dto.deliveryAddress,
       total,
+      paymentMethod: dto.paymentMethod,
+      paymentDetails: dto.paymentDetails,
     });
   }
 
@@ -99,9 +100,11 @@ export class OrdersService {
       user: userId,
       items,
       type: dto.type,
-      deliveryAddress: dto.deliveryAddress,
       total,
+      paymentMethod: dto.paymentMethod,
+      paymentDetails: dto.paymentDetails,
     });
+
     await order.save();
     await this.cartService.clearCart(userId);
 
@@ -130,7 +133,8 @@ export class OrdersService {
       user: userId,
       items: clonedItem,
       type: dto.type || previousOrder.type,
-      deliveryAddress: dto.deliveryAddress || previousOrder.deliveryAddress,
+      paymentMethod: dto.paymentMethod,
+      paymentDetails: dto.paymentDetails,
       total,
     });
 
@@ -191,6 +195,15 @@ export class OrdersService {
       );
 
     order.status = dto.status;
+
+    if (order.status === OrderStatus.CONFIRMED) {
+      order.confirmedAt = new Date();
+    } else if (order.status === OrderStatus.PREPARING) {
+      order.preparedAt = new Date();
+    } else if (order.status === OrderStatus.DELIVERED) {
+      order.deliveredAt = new Date();
+    }
+
     await order.save();
 
     this.orderGateway.emitOrderStatusUpdate(id, dto.status);
@@ -212,17 +225,17 @@ export class OrdersService {
 
     const isValidNext = canStatusTransit(
       order.status,
-      OrderStatus['CANCEL_REQUEST'],
+      OrderStatus.CANCEL_REQUEST,
     );
 
     if (!isValidNext)
       throw new BadRequestException(`Cannot cancel at this state`);
 
-    order.status = OrderStatus['CANCEL_REQUEST'];
+    order.status = OrderStatus.CANCEL_REQUEST;
     await order.save();
     this.orderGateway.emitOrderStatusUpdate(
       orderId,
-      OrderStatus['CANCEL_REQUEST'],
+      OrderStatus.CANCEL_REQUEST,
     );
 
     return order;

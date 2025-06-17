@@ -14,7 +14,7 @@ import { PermissionsGuard } from 'src/common/guards/permissions.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { Permissions } from 'src/common/decorators/permissions.decorator';
 import { UpdateStatusDto } from './dto/update-status.dto';
-import { OrderStatus } from './schemas/order.schema';
+import { ApproveCancelDto } from './dto/approve-cancel.dto';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard, PermissionsGuard)
 @Roles('manager', 'admin')
@@ -44,7 +44,7 @@ export class AdminOrdersController {
   }
 
   @Post(':id/approve-to-cancel')
-  async approveCancel(@Param('id') id: string, @Body() status: OrderStatus) {
-    return await this.ordersService.approveOrRejectCancel(id, status);
+  async approveCancel(@Param('id') id: string, @Body() dto: ApproveCancelDto) {
+    return await this.ordersService.approveOrRejectCancel(id, dto.status);
   }
 }
