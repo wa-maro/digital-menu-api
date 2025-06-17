@@ -25,9 +25,39 @@ export enum OrderStatus {
   FAILED = 'failed',
 }
 
+export enum PaymentMethod {
+  CASH = 'cash',
+  LIPA_NAMBA = 'lipa_namba',
+}
+
+export enum SelectedNetwork {
+  MPESA = 'mpesa',
+  TIGOPESA = 'tigopesa',
+}
+
+@Schema({ _id: false })
+class PaymentDetails {
+  @Prop({ enum: SelectedNetwork })
+  selectedNetwork?: SelectedNetwork;
+
+  @Prop()
+  phoneNumber?: string;
+
+  @Prop()
+  tableNumber?: string;
+
+  @Prop()
+  pickupTime?: string;
+
+  @Prop()
+  deliveryAddress?: string;
+}
+
+const PaymentDetailsSchema = SchemaFactory.createForClass(PaymentDetails);
+
 @Schema({ timestamps: true })
 export class Order {
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
   user: Types.ObjectId;
 
   @Prop({ type: [OrderItemSchema], required: true })
@@ -40,17 +70,27 @@ export class Order {
   })
   type: OrderType;
 
-  @Prop({
-    enum: OrderStatus,
-    default: OrderStatus.PENDING,
-  })
+  @Prop({ enum: OrderStatus, default: OrderStatus.PENDING, index: true })
   status: OrderStatus;
 
-  @Prop()
-  deliveryAddress?: string;
+  @Prop({ enum: PaymentMethod })
+  paymentMethod: PaymentMethod;
+
+  @Prop({ type: PaymentDetailsSchema })
+  paymentDetails?: PaymentDetails;
 
   @Prop({ required: true })
   total: number;
+
+  @Prop() confirmedAt?: Date;
+  @Prop() preparedAt?: Date;
+  @Prop() deliveredAt?: Date;
+
+  // @Prop({ unique: true })
+  // orderCode?: string;
+
+  // @Prop({ default: false })
+  // isDeleted: boolean;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
