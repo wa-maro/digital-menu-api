@@ -12,6 +12,15 @@ export class CartService {
     @InjectModel(Cart.name) private readonly cartModel: Model<CartDocument>,
   ) {}
 
+  async geCarts() {
+    return await this.cartModel
+      .find()
+      .populate('user')
+      .populate('items.item')
+      .lean()
+      .exec();
+  }
+
   async getUserCart(userId: string) {
     return await this.cartModel
       .findOne({ user: userId })

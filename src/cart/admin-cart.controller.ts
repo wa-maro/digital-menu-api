@@ -17,9 +17,14 @@ import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @Roles('admin', 'manager')
-@Controller('admin/cart')
+@Controller('admin/carts')
 export class AdminCartController {
   constructor(private readonly cartService: CartService) {}
+
+  @Get()
+  async getCarts() {
+    return await this.cartService.geCarts();
+  }
 
   @Get('user/:userId')
   async getUserCart(@Param('userId') userId: string) {
