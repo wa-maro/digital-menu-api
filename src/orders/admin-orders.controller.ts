@@ -10,31 +10,29 @@ import {
 import { OrdersService } from './orders.service';
 import { AuthGuard } from '@nestjs/passport';
 import { RoleGuard } from 'src/common/guards/roles.guard';
-import { PermissionsGuard } from 'src/common/guards/permissions.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { Permissions } from 'src/common/decorators/permissions.decorator';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { ApproveCancelDto } from './dto/approve-cancel.dto';
 
-@UseGuards(AuthGuard('jwt'), RoleGuard, PermissionsGuard)
+@UseGuards(AuthGuard('jwt'), RoleGuard)
 @Roles('manager', 'admin')
 @Controller('admin/orders')
 export class AdminOrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  @Permissions('order:read:all')
+  // @Permissions('order:read:all')
   @Get('all')
   async getAllOrders() {
     return await this.ordersService.getAllOrders();
   }
 
-  @Permissions('order:read')
+  // @Permissions('order:read')
   @Get(':id')
   async getOrder(@Param('id') id: string) {
     return await this.ordersService.getOrderByIdForAdmin(id);
   }
 
-  @Permissions('order:update:status')
+  // @Permissions('order:update:status')
   @Put(':id/status')
   async updateOrderStatus(
     @Param('id') id: string,
