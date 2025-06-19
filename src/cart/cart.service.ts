@@ -25,6 +25,7 @@ export class CartService {
     return await this.cartModel
       .findOne({ user: userId })
       .populate('items.item')
+      .lean()
       .exec();
   }
 

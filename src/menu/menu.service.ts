@@ -31,7 +31,7 @@ export class MenuService {
   }
 
   async getCategories() {
-    return await this.categoryModel.find().exec();
+    return await this.categoryModel.find().lean().exec();
   }
 
   async updateCategory(id: string, dto: UpdateCategoryDto) {
@@ -70,14 +70,18 @@ export class MenuService {
   }
 
   async getItems() {
-    return await this.itemModel.find().populate('category').exec();
+    return await this.itemModel.find().populate('category').lean().exec();
   }
 
   async getItem(id: string) {
     if (!isValidObjectId(id))
       throw new BadRequestException(`Invalid item ID: ${id}`);
 
-    const item = await this.itemModel.findById(id).populate('category').exec();
+    const item = await this.itemModel
+      .findById(id)
+      .populate('category')
+      .lean()
+      .exec();
     if (!item) throw new NotFoundException(`Item with ID "${id}" not found.`);
 
     return item;

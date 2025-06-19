@@ -148,6 +148,7 @@ export class OrdersService {
     return await this.orderModel
       .find({ user: userId })
       .populate('items.item')
+      .lean()
       .exec();
   }
 
@@ -161,6 +162,7 @@ export class OrdersService {
     const order = await this.orderModel
       .findOne({ _id: id, user: userId })
       .populate('items.item')
+      .lean()
       .exec();
 
     if (!order) throw new NotFoundException(`Order doesn't exist`);
@@ -176,6 +178,7 @@ export class OrdersService {
       .findById(id)
       .populate('items.item')
       .populate('user')
+      .lean()
       .exec();
 
     if (!order) throw new NotFoundException('Order not found');
@@ -217,6 +220,7 @@ export class OrdersService {
       .populate('user', 'email role')
       .populate('items.item', 'name price')
       .sort({ createdAt: -1 })
+      .lean()
       .exec();
   }
 

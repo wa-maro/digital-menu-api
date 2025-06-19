@@ -33,6 +33,7 @@ export enum PaymentMethod {
 export enum SelectedNetwork {
   MPESA = 'mpesa',
   TIGOPESA = 'tigopesa',
+  AIRTEL_MONEY = 'airtel-money',
 }
 
 @Schema({ _id: false })
@@ -42,6 +43,9 @@ class PaymentDetails {
 
   @Prop()
   phoneNumber?: string;
+
+  @Prop()
+  contactPhone?: string;
 
   @Prop()
   tableNumber?: string;
@@ -85,12 +89,6 @@ export class Order {
   @Prop() confirmedAt?: Date;
   @Prop() preparedAt?: Date;
   @Prop() deliveredAt?: Date;
-
-  // @Prop({ unique: true })
-  // orderCode?: string;
-
-  // @Prop({ default: false })
-  // isDeleted: boolean;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
