@@ -44,6 +44,9 @@ class PaymentDetails {
   phoneNumber?: string;
 
   @Prop()
+  contactPhone?: string;
+
+  @Prop()
   tableNumber?: string;
 
   @Prop()
@@ -85,12 +88,6 @@ export class Order {
   @Prop() confirmedAt?: Date;
   @Prop() preparedAt?: Date;
   @Prop() deliveredAt?: Date;
-
-  // @Prop({ unique: true })
-  // orderCode?: string;
-
-  // @Prop({ default: false })
-  // isDeleted: boolean;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
