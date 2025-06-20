@@ -15,6 +15,18 @@ import {
   SelectedNetwork,
 } from '../schemas/order.schema';
 
+class DeliveryLocationDto {
+  @IsNotEmpty()
+  lng: number;
+
+  @IsNotEmpty()
+  lat: number;
+
+  @IsNotEmpty()
+  @IsString()
+  address: string;
+}
+
 class PaymentDetailsDto {
   @IsOptional()
   @IsEnum(SelectedNetwork, {
@@ -40,6 +52,11 @@ class PaymentDetailsDto {
   @IsNotEmpty({ message: 'Delivery address is required for delivery orders' })
   @IsString()
   deliveryAddress?: string;
+
+  @ValidateIf((o) => o.type === OrderType.DELIVERY)
+  @ValidateNested()
+  @Type(() => DeliveryLocationDto)
+  deliveryLocation?: DeliveryLocationDto;
 }
 
 export class PlaceOrderDto {

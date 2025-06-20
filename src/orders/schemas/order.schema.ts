@@ -37,6 +37,18 @@ export enum SelectedNetwork {
 }
 
 @Schema({ _id: false })
+class DeliveryLocation {
+  @Prop({ required: true })
+  lng: number;
+
+  @Prop({ required: true })
+  lat: number;
+
+  @Prop({ required: true })
+  address: string;
+}
+
+@Schema({ _id: false })
 class PaymentDetails {
   @Prop({ enum: SelectedNetwork })
   selectedNetwork?: SelectedNetwork;
@@ -55,6 +67,9 @@ class PaymentDetails {
 
   @Prop()
   deliveryAddress?: string;
+
+  @Prop({ type: DeliveryLocation })
+  deliveryLocation?: DeliveryLocation;
 }
 
 const PaymentDetailsSchema = SchemaFactory.createForClass(PaymentDetails);
