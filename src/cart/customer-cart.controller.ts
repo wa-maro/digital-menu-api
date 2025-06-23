@@ -63,16 +63,18 @@ export class CustomerCartController {
     return await this.cartService.clearCart(req.user['userId']);
   }
 
-  @Post('reorder/:orderId')
-  async reorderToCart(
+  @Get('from-order/:orderId')
+  async loadCartFromOrder(
+    @Req() req: CustomRequest,
     @Param('orderId') orderId: string,
     @Query('merge') merge: 'false' | 'true' = 'false',
-    @Req() req: CustomRequest,
   ) {
-    const order = await this.ordersService.getOrderById(
-      orderId,
-      req.user['userId'],
-    );
-    return await this.cartService.createCartFromCart(order, merge === 'true');
+    const userId = req.user['userId'];
+    const order = await this.ordersService.getOrderById(orderId, userId);
+
+    if (!order || order.user.toString() !== userId)
+      throw new Error('Invalid or unauthorized order access');
+
+    return await this.cartService.createCartFromOrder(order, merge === 'true');
   }
 }

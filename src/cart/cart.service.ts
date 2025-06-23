@@ -85,7 +85,7 @@ export class CartService {
     return cart;
   }
 
-  async createCartFromCart(order: Order, merge = false) {
+  async createCartFromOrder(order: Order, merge = false) {
     const clonedItems = order.items.map((i) => ({
       item: i.item,
       quantity: i.quantity,
