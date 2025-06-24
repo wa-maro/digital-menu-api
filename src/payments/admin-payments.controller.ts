@@ -52,7 +52,7 @@ export class AdminPaymentController {
     );
 
     this.logger.log(
-      `Payment ${transactionId} status updated to ${status.toUpperCase()} by admin`,
+      `Payment ${transactionId} status updated to ${status} by admin`,
     );
 
     console.log(updatedPayment._id);
