@@ -4,7 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Order, OrderDocument, OrderStatus } from './schemas/order.schema';
+import {
+  Order,
+  OrderDocument,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+} from './schemas/order.schema';
 import { isValidObjectId, Model, Types } from 'mongoose';
 import { PlaceOrderDto } from './dto/place-order.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
@@ -12,10 +18,9 @@ import { CartService } from 'src/cart/cart.service';
 import { PlaceFromCartDto } from './dto/place-from-cart.dto';
 import { ReorderDto } from './dto/reorder.dto';
 import { OrdersGateway } from './orders.gateway';
+import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 
-type OrderTransitionMap = {
-  [K in OrderStatus]?: OrderStatus[];
-};
+type OrderTransitionMap = { [K in OrderStatus]?: OrderStatus[] };
 
 export const allowedOrderTransitionMap: OrderTransitionMap = {
   [OrderStatus.PENDING]: [
@@ -71,12 +76,25 @@ export class OrdersService {
       price: i.price,
     }));
 
+    const initialPaymentStatus =
+      dto.paymentMethod === PaymentMethod.CASH
+        ? PaymentStatus.PENDING
+        : PaymentStatus.PENDING;
+
     return await this.orderModel.create({
       user: userId,
       items,
       type: dto.type,
       total,
       paymentMethod: dto.paymentMethod,
+      paymentStatus: initialPaymentStatus,
+      paymentLog: [
+        {
+          status: initialPaymentStatus,
+          timestamp: new Date(),
+          message: 'Order placed',
+        },
+      ],
       paymentDetails: dto.paymentDetails,
     });
   }
@@ -96,12 +114,25 @@ export class OrdersService {
       0,
     );
 
+    const initialPaymentStatus =
+      dto.paymentMethod === PaymentMethod.CASH
+        ? PaymentStatus.PENDING
+        : PaymentStatus.PENDING;
+
     const order = new this.orderModel({
       user: userId,
       items,
       type: dto.type,
       total,
       paymentMethod: dto.paymentMethod,
+      paymentStatus: initialPaymentStatus,
+      paymentLog: [
+        {
+          status: initialPaymentStatus,
+          timestamp: new Date(),
+          message: 'Order placed',
+        },
+      ],
       paymentDetails: dto.paymentDetails,
     });
 
@@ -129,11 +160,24 @@ export class OrdersService {
       0,
     );
 
+    const initialPaymentStatus =
+      dto.paymentMethod === PaymentMethod.CASH
+        ? PaymentStatus.PENDING // Awaiting cash on delivery/pickup
+        : PaymentStatus.PENDING; // Will be updated on AzamPesa confirmation
+
     const newOrder = new this.orderModel({
       user: userId,
       items: clonedItem,
       type: dto.type || previousOrder.type,
       paymentMethod: dto.paymentMethod,
+      paymentStatus: initialPaymentStatus,
+      paymentLog: [
+        {
+          status: initialPaymentStatus,
+          timestamp: new Date(),
+          message: 'Order placed',
+        },
+      ],
       paymentDetails: dto.paymentDetails,
       total,
     });
@@ -211,6 +255,35 @@ export class OrdersService {
 
     this.orderGateway.emitOrderStatusUpdate(id, dto.status);
 
+    return order;
+  }
+
+  async updatePaymentStatus(orderId: string, dto: UpdatePaymentStatusDto) {
+    const order = await this.orderModel.findById(orderId);
+    if (!order) throw new NotFoundException('Order not found');
+
+    order.paymentStatus = dto.status;
+    order.paymentDetails ??= {};
+
+    if (dto.transactionId)
+      order.paymentDetails.transactionId = dto.transactionId;
+
+    if (dto.userEnteredTransactionId)
+      order.paymentDetails.userEnteredTransactionId =
+        dto.userEnteredTransactionId;
+
+    if (dto.paidAt) order.paymentDetails.paidAt = dto.paidAt;
+
+    order.paymentLog = [
+      ...(order.paymentLog || []),
+      {
+        status,
+        timestamp: new Date(),
+        message: dto.message || '',
+      },
+    ];
+
+    await order.save();
     return order;
   }
 
