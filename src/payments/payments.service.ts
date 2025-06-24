@@ -4,6 +4,7 @@ import { Payment, PaymentDocument } from './schema/payment.schema';
 import { Model } from 'mongoose';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
 import { PaymentStatus } from 'src/orders/schemas/order.schema';
+import { PaymentResponseDto } from './dto/payment-response.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -46,6 +47,46 @@ export class PaymentsService {
     this.logger.warn(`Retrying payment for order ${orderId}`);
 
     return this.initiatePaymentRecord(orderId, dto);
+  }
+
+  async findPayments(
+    filters: { orderId?: string; status?: PaymentStatus },
+    limit = 20,
+    page = 1,
+  ): Promise<{
+    payments: PaymentResponseDto[];
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+    pageSize: number;
+  }> {
+    const query: any = {};
+
+    if (filters.orderId) query.order = filters.orderId;
+
+    if (filters.status) query.status = filters.status;
+
+    const [totalItems, payments] = await Promise.all([
+      this.paymentModel.countDocuments(query),
+      this.paymentModel
+        .find(query)
+        .populate('order', 'user total status createdAt')
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .lean()
+        .exec(),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+
+    return {
+      payments: payments.map(PaymentResponseDto.from),
+      totalItems,
+      totalPages,
+      currentPage: page,
+      pageSize: limit,
+    };
   }
 
   async getLatestByOrder(orderId: string): Promise<PaymentDocument | null> {
