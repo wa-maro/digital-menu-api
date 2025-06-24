@@ -39,6 +39,29 @@ export class PaymentsService {
     return payment;
   }
 
+  async retryPayment(
+    orderId: string,
+    dto: InitiatePaymentDto,
+  ): Promise<PaymentDocument> {
+    this.logger.warn(`Retrying payment for order ${orderId}`);
+
+    return this.initiatePaymentRecord(orderId, dto);
+  }
+
+  async getLatestByOrder(orderId: string): Promise<PaymentDocument | null> {
+    return this.paymentModel
+      .findOne({ order: orderId })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async countFailedPayments(orderId: string): Promise<number> {
+    return this.paymentModel.countDocuments({
+      order: orderId,
+      status: PaymentStatus.FAILED,
+    });
+  }
+
   private async sendAzamPesaSTKPush(payment: PaymentDocument) {
     try {
       // TODO: Call AzamPesa API here to initiate STK Push or Lipa Namba code

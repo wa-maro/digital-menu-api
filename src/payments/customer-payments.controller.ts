@@ -69,4 +69,50 @@ export class CustomerPaymentController {
 
     return PaymentResponseDto.from(payment);
   }
+
+  @Post('retry/:orderId')
+  async retryPayment(
+    @Param('orderId') orderId: string,
+    @Req() req: CustomRequest,
+  ) {
+    const order = await this.ordersService.getOrderById(
+      orderId,
+      req.user['userId'],
+    );
+    if (!order) throw new NotFoundException('Order not found');
+
+    const latestPayment = await this.paymentService.getLatestByOrder(orderId);
+
+    if (!latestPayment || latestPayment.status !== PaymentStatus.FAILED)
+      throw new BadRequestException('Retry not allowed at this stage');
+
+    const MAX_RETRIES = 3;
+
+    const failedAttempts =
+      await this.paymentService.countFailedPayments(orderId);
+    if (failedAttempts >= MAX_RETRIES)
+      throw new BadRequestException(
+        `Retry limit reached (${MAX_RETRIES} attempts). Please contact support.`,
+      );
+
+    const dto: InitiatePaymentDto = {
+      phoneNumber: latestPayment.phoneNumber,
+      selectedNetwork: latestPayment.selectedNetwork,
+      paymentMethod: latestPayment.paymentMethod,
+      sessionId: `retry-${Date.now()}`,
+      message: 'Customer retried payment',
+    };
+
+    const payment = await this.paymentService.initiatePaymentRecord(
+      orderId,
+      dto,
+    );
+
+    await this.ordersService.updatePaymentStatus(orderId, {
+      status: PaymentStatus.PENDING,
+      message: dto.message,
+    });
+
+    return PaymentResponseDto.from(payment);
+  }
 }
