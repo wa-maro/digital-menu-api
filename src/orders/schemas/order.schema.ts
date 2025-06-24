@@ -30,6 +30,14 @@ export enum PaymentMethod {
   LIPA_NAMBA = 'lipa_namba',
 }
 
+export enum PaymentStatus {
+  PENDING = 'pending',
+  PAID = 'paid',
+  FAILED = 'failed',
+  CANCELLED = 'cancelled',
+  MANUAL_REVIEW = 'manual_review',
+}
+
 export enum SelectedNetwork {
   MPESA = 'mpesa',
   TIGOPESA = 'tigopesa',
@@ -55,6 +63,18 @@ class PaymentDetails {
 
   @Prop()
   phoneNumber?: string;
+
+  @Prop()
+  transactionId?: string; // TODO:for AzamPesa reference
+
+  @Prop()
+  paymentSessionId?: string; // TODO: if provided by AzamPay
+
+  @Prop()
+  paidAt?: Date;
+
+  @Prop()
+  userEnteredTransactionId?: string; // TODO: for fallback/manual entry
 
   @Prop()
   contactPhone?: string;
@@ -94,6 +114,12 @@ export class Order {
 
   @Prop({ enum: PaymentMethod })
   paymentMethod: PaymentMethod;
+
+  @Prop({ enum: PaymentStatus, default: PaymentStatus.PENDING })
+  paymentStatus: PaymentStatus;
+
+  @Prop({ type: [{ status: String, timestamp: Date, message: String }] })
+  paymentLog?: { status: string; timestamp: Date; message?: string }[];
 
   @Prop({ type: PaymentDetailsSchema })
   paymentDetails?: PaymentDetails;

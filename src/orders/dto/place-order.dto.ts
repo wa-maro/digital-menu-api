@@ -38,6 +38,22 @@ class PaymentDetailsDto {
   @IsString()
   phoneNumber?: string;
 
+  @IsOptional()
+  @IsString()
+  transactionId?: string; // AzamPesa transaction reference (after confirmation)
+
+  @IsOptional()
+  @IsString()
+  paymentSessionId?: string; // If returned by AzamPesa when initiating payment
+
+  // @IsOptional()
+  // @IsString()
+  // userEnteredTransactionId?: string; // For manual fallback entry
+
+  @IsOptional()
+  @IsString()
+  contactPhone?: string; // Optional contact number for delivery/communication
+
   @ValidateIf((o) => o.type === OrderType.DINE_IN)
   @IsNotEmpty({ message: 'Table number is required for dine-in orders' })
   @IsString()
