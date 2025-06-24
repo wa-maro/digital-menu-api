@@ -277,7 +277,7 @@ export class OrdersService {
     order.paymentLog = [
       ...(order.paymentLog || []),
       {
-        status,
+        status: dto.status,
         timestamp: new Date(),
         message: dto.message || '',
       },

@@ -10,14 +10,14 @@ export type PaymentDocument = Payment & Document;
 
 @Schema({ timestamps: true })
 export class Payment {
-  @Prop({ type: Types.ObjectId, ref: 'Order', required: true })
+  @Prop({ type: Types.ObjectId, ref: 'Order', required: true, index: true })
   order: Types.ObjectId;
 
   @Prop({ enum: PaymentMethod })
-  method: PaymentMethod;
+  paymentMethod: PaymentMethod;
 
   @Prop({ enum: SelectedNetwork })
-  network: SelectedNetwork;
+  selectedNetwork: SelectedNetwork;
 
   @Prop({ required: true })
   phoneNumber: string;
