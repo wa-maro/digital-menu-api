@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Payment, PaymentDocument } from './schema/payment.schema';
 import { Model } from 'mongoose';
@@ -87,6 +87,29 @@ export class PaymentsService {
       currentPage: page,
       pageSize: limit,
     };
+  }
+
+  async updatePaymentStatus(
+    transactionId: string,
+    status: PaymentStatus,
+    options?: {
+      paidAt?: Date;
+      message?: string;
+    },
+  ): Promise<PaymentResponseDto> {
+    const payment = await this.paymentModel.findById(transactionId);
+
+    if (!payment) throw new NotFoundException('Payment record not found');
+
+    payment.status = status;
+    if (options?.paidAt) payment.paidAt = options.paidAt;
+    if (options?.message) payment.message = options.message;
+
+    await payment.save();
+
+    this.logger.log(`Updated payment ${payment._id} status to ${status}`);
+
+    return PaymentResponseDto.from(payment);
   }
 
   async getLatestByOrder(orderId: string): Promise<PaymentDocument | null> {

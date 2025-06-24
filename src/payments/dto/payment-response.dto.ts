@@ -5,7 +5,7 @@ import {
 } from 'src/orders/schemas/order.schema';
 
 export class PaymentResponseDto {
-  id: string;
+  _id: string;
   order: string;
   paymentMethod: PaymentMethod;
   selectedNetwork: SelectedNetwork;
@@ -16,8 +16,8 @@ export class PaymentResponseDto {
 
   static from(payment: any): PaymentResponseDto {
     return {
-      id: payment._id.toString(),
-      order: payment.order.toString(),
+      _id: payment._id,
+      order: payment.order,
       paymentMethod: payment.paymentMethod,
       selectedNetwork: payment.selectedNetwork,
       status: payment.status,
