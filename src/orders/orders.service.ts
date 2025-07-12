@@ -20,6 +20,7 @@ import { ReorderDto } from './dto/reorder.dto';
 import { OrdersGateway } from './orders.gateway';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { ManualPaymentConfirmationDto } from 'src/payments/dto/manual-payment-confirmation.dto';
+import { PaymentStatusQueryDto } from 'src/payments/dto/payment-status-query.dto';
 
 type OrderTransitionMap = { [K in OrderStatus]?: OrderStatus[] };
 
@@ -374,5 +375,46 @@ export class OrdersService {
 
     await order.save();
     return order;
+  }
+
+  async queryPaymentStatus(dto: PaymentStatusQueryDto) {
+    if (!dto.orderId && !dto.transactionId)
+      throw new BadRequestException(
+        'At least one of orderId or transactionId is required',
+      );
+
+    const query: any = {};
+
+    if (dto.orderId) {
+      if (!isValidObjectId(dto.orderId))
+        throw new BadRequestException('Invalid order ID');
+      query._id = dto.orderId;
+    }
+
+    if (dto.transactionId) {
+      query['paymentDetails.transactionId'] = dto.transactionId;
+    }
+
+    const order = await this.orderModel
+      .findOne(query)
+      .populate('user', 'email')
+      .populate('items.item', 'name')
+      .lean();
+
+    if (!order) throw new NotFoundException('Order not found');
+
+    return {
+      orderId: order._id,
+      user: order.user,
+      paymentStatus: order.paymentStatus,
+      transactionId: order.paymentDetails?.transactionId,
+      userEnteredTransactionId: order.paymentDetails?.userEnteredTransactionId,
+      paidAt: order.paymentDetails?.paidAt,
+      phoneNumber: order.paymentDetails?.phoneNumber,
+      total: order.total,
+      type: order.type,
+      paymentMethod: order.paymentMethod,
+      statusHistory: order.paymentLog,
+    };
   }
 }

@@ -17,6 +17,7 @@ import { UpdateStatusDto } from './dto/update-status.dto';
 import { ApproveCancelDto } from './dto/approve-cancel.dto';
 import { ManualPaymentConfirmationDto } from 'src/payments/dto/manual-payment-confirmation.dto';
 import { CustomRequest } from 'src/interfaces/custom-request.interface';
+import { PaymentStatusQueryDto } from 'src/payments/dto/payment-status-query.dto';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @Roles('manager', 'admin')
@@ -61,5 +62,13 @@ export class AdminOrdersController {
     if (!order) throw new NotFoundException('Order not found');
 
     return await this.ordersService.confirmManualPayment(orderId, dto);
+  }
+
+  @Post('status/query')
+  async queryPaymentStatus(
+    @Body() dto: PaymentStatusQueryDto,
+    @Req() req: CustomRequest,
+  ) {
+    return await this.ordersService.queryPaymentStatus(dto);
   }
 }
