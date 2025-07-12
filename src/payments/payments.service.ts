@@ -51,10 +51,10 @@ export class PaymentsService {
 
   async findPayments(
     filters: { orderId?: string; status?: PaymentStatus },
-    limit = 20,
-    page = 1,
+    limit: number = 20,
+    page: number = 1,
   ): Promise<{
-    payments: PaymentResponseDto[];
+    results: PaymentResponseDto[];
     totalItems: number;
     totalPages: number;
     currentPage: number;
@@ -81,7 +81,7 @@ export class PaymentsService {
     const totalPages = Math.ceil(totalItems / limit);
 
     return {
-      payments: payments.map(PaymentResponseDto.from),
+      results: payments.map(PaymentResponseDto.from),
       totalItems,
       totalPages,
       currentPage: page,
@@ -97,8 +97,7 @@ export class PaymentsService {
       message?: string;
     },
   ): Promise<PaymentResponseDto> {
-    const payment = await this.paymentModel.findById(transactionId);
-
+    const payment = await this.paymentModel.findOne({ transactionId });
     if (!payment) throw new NotFoundException('Payment record not found');
 
     payment.status = status;
@@ -128,10 +127,40 @@ export class PaymentsService {
 
   private async sendAzamPesaSTKPush(payment: PaymentDocument) {
     try {
-      // TODO: Call AzamPesa API here to initiate STK Push or Lipa Namba code
-      // 1. Call AzamPesa HTTP endpoint here using HttpService or fetch
-      // 2. Include payment.selectedNetwork, payment.phoneNumber, etc.
-      // 3. Update payment status based on success/failure
+      const payload = {
+        accountNumber: payment.phoneNumber,
+        amount: 1000, // ← You must fetch order total
+        currency: 'TZS',
+        externalReferenceId: payment._id, // Or orderId
+        provider: payment.selectedNetwork,
+        description: 'Order Payment',
+        // TODO: Additional fields depending on AzamPesa docs
+      };
+
+      // Example using fetch:
+      const res = await fetch(
+        'https://sandbox.azampay.co.tz/api/payments/stk',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer YOUR_ACCESS_TOKEN`,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const response = await res.json();
+
+      if (!res.ok) throw new Error(response.message || 'AzamPesa error');
+
+      // Update payment with sessionId or transactionId if returned
+      await this.paymentModel.findByIdAndUpdate(payment._id, {
+        sessionId: response.sessionId, // if returned
+        message: 'AzamPesa STK push sent',
+      });
+
+      this.logger.log(`AzamPesa STK push sent successfully`);
     } catch (err) {
       this.logger.error('AzamPesa API call failed', err);
       await this.paymentModel.findByIdAndUpdate(payment._id, {
