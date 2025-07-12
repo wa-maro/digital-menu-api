@@ -5,6 +5,11 @@ import { Model } from 'mongoose';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
 import { PaymentStatus } from 'src/orders/schemas/order.schema';
 import { PaymentResponseDto } from './dto/payment-response.dto';
+import {
+  AzamPesaPaymentStatus,
+  AzamPesaWebhookDto,
+} from './dto/azampesa-webhook.dto';
+import { OrdersService } from 'src/orders/orders.service';
 
 @Injectable()
 export class PaymentsService {
@@ -13,6 +18,7 @@ export class PaymentsService {
   constructor(
     @InjectModel(Payment.name)
     private readonly paymentModel: Model<PaymentDocument>,
+    private readonly ordersService: OrdersService,
   ) {}
 
   async initiatePaymentRecord(
@@ -167,6 +173,49 @@ export class PaymentsService {
         status: PaymentStatus.FAILED,
         message: 'AzamPesa API call failed',
       });
+    }
+  }
+
+  async handleAzamPesaWebhook(dto: AzamPesaWebhookDto) {
+    const payment = await this.paymentModel.findOne({
+      transactionId: dto.transactionId,
+    });
+    if (!payment) throw new NotFoundException('Payment not found');
+
+    payment.status = this.mapAzamStatusToSystemStatus(dto.status);
+    payment.paidAt = new Date(dto.paidAt);
+    payment.message = dto.message;
+    await payment.save();
+
+    this.logger.log(
+      `Webhook updated payment ${payment._id} with status: ${dto.status}`,
+    );
+
+    await this.ordersService.updatePaymentStatus(payment.order.toString(), {
+      status: payment.status,
+      transactionId: dto.transactionId,
+      paidAt: new Date(dto.paidAt),
+      message: dto.message || 'Updated via AzamPesa webhook',
+    });
+
+    this.logger.log(
+      `Order ${payment.order} paymentStatus updated via webhook to ${dto.status}`,
+    );
+  }
+
+  private mapAzamStatusToSystemStatus(
+    status: AzamPesaPaymentStatus,
+  ): PaymentStatus {
+    switch (status) {
+      case AzamPesaPaymentStatus.SUCCESS:
+        return PaymentStatus.PAID;
+      case AzamPesaPaymentStatus.FAILED:
+        return PaymentStatus.FAILED;
+      case AzamPesaPaymentStatus.CANCELLED:
+        return PaymentStatus.CANCELLED;
+      case AzamPesaPaymentStatus.PENDING:
+      default:
+        return PaymentStatus.PENDING;
     }
   }
 }

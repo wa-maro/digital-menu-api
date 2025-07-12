@@ -17,6 +17,7 @@ import { OrdersService } from 'src/orders/orders.service';
 import { PaymentsService } from './payments.service';
 import { PaymentResponseDto } from './dto/payment-response.dto';
 import { CustomRequest } from 'src/interfaces/custom-request.interface';
+import { AzamPesaWebhookDto } from './dto/azampesa-webhook.dto';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @Roles('customer')
@@ -33,9 +34,6 @@ export class CustomerPaymentController {
     @Body() dto: InitiatePaymentDto,
     @Req() req: CustomRequest,
   ) {
-    const { phoneNumber, selectedNetwork, paymentMethod, message, sessionId } =
-      dto;
-
     const order = await this.ordersService.getOrderById(
       orderId,
       req.user['userId'],
@@ -43,21 +41,20 @@ export class CustomerPaymentController {
 
     if (!order) throw new NotFoundException('Order not found');
 
-    if (order.paymentStatus === PaymentStatus.PENDING)
+    if (
+      order.paymentStatus === PaymentStatus.PENDING ||
+      order.paymentStatus === PaymentStatus.PAID
+    ) {
       throw new BadRequestException(
-        'A payment for this order is already in progress',
+        `Payment cannot be initiated. Current status: ${order.paymentStatus}`,
       );
+    }
 
-    if (order.paymentStatus === PaymentStatus.PAID)
-      throw new BadRequestException('This order has already been paid');
-
-    const finalSessionId = sessionId || `mock-session-${Date.now()}`;
-    const finalMessage = message || 'Payment initiated';
+    const finalSessionId = dto.sessionId || `initiate-${Date.now()}`;
+    const finalMessage = dto.message || 'Payment initiated';
 
     const payment = await this.paymentService.initiatePaymentRecord(orderId, {
-      paymentMethod: paymentMethod,
-      selectedNetwork: selectedNetwork,
-      phoneNumber,
+      ...dto,
       sessionId: finalSessionId,
       message: finalMessage,
     });
@@ -92,7 +89,7 @@ export class CustomerPaymentController {
       await this.paymentService.countFailedPayments(orderId);
     if (failedAttempts >= MAX_RETRIES)
       throw new BadRequestException(
-        `Retry limit reached (${MAX_RETRIES} attempts). Please contact support.`,
+        `Retry limit reached (${MAX_RETRIES}). Please contact support.`,
       );
 
     const dto: InitiatePaymentDto = {
@@ -100,7 +97,7 @@ export class CustomerPaymentController {
       selectedNetwork: latestPayment.selectedNetwork,
       paymentMethod: latestPayment.paymentMethod,
       sessionId: `retry-${Date.now()}`,
-      message: 'Customer retried payment',
+      message: 'Retry payment attempt',
     };
 
     const payment = await this.paymentService.initiatePaymentRecord(
@@ -114,5 +111,10 @@ export class CustomerPaymentController {
     });
 
     return PaymentResponseDto.from(payment);
+  }
+
+  @Post('webhook/azam-pesa')
+  async handleAzamPesaWebhook(@Body() dto: AzamPesaWebhookDto) {
+    return this.paymentService.handleAzamPesaWebhook(dto);
   }
 }
