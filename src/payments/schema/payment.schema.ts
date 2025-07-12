@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, SchemaTypes, Types } from 'mongoose';
 import {
   PaymentMethod,
   PaymentStatus,
@@ -39,6 +39,21 @@ export class Payment {
 
   @Prop()
   userEnteredTransactionId?: string;
+
+  @Prop()
+  amount?: number;
+
+  @Prop({ type: SchemaTypes.Mixed })
+  responseData?: Record<string, any>;
+
+  @Prop()
+  retryCount?: number;
+
+  @Prop()
+  expiresAt?: Date;
+
+  @Prop()
+  isWebhookReceived?: boolean;
 }
 
 export const PaymentSchema = SchemaFactory.createForClass(Payment);

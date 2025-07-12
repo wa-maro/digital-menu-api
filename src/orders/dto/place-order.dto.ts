@@ -3,6 +3,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsOptional,
+  IsPhoneNumber,
   IsString,
   ValidateIf,
   ValidateNested,
@@ -30,29 +31,33 @@ class DeliveryLocationDto {
 class PaymentDetailsDto {
   @IsOptional()
   @IsEnum(SelectedNetwork, {
-    message: 'selectedNetwork must be one of: Mpesa, tigopesa',
+    message: 'selectedNetwork must be one of: mpesa, tigopesa, airtel-money, azampesa',
   })
   selectedNetwork?: SelectedNetwork;
 
   @IsOptional()
-  @IsString()
+  @IsPhoneNumber('TZ', {
+    message: 'phoneNumber must be a valid Tanzanian number',
+  })
   phoneNumber?: string;
 
   @IsOptional()
   @IsString()
-  transactionId?: string; // AzamPesa transaction reference (after confirmation)
+  transactionId?: string;
 
   @IsOptional()
   @IsString()
-  paymentSessionId?: string; // If returned by AzamPesa when initiating payment
-
-  // @IsOptional()
-  // @IsString()
-  // userEnteredTransactionId?: string; // For manual fallback entry
+  paymentSessionId?: string;
 
   @IsOptional()
   @IsString()
-  contactPhone?: string; // Optional contact number for delivery/communication
+  userEnteredTransactionId?: string;
+
+  @IsOptional()
+  @IsPhoneNumber('TZ', {
+    message: 'contactPhone must be a valid Tanzanian number',
+  })
+  contactPhone?: string;
 
   @ValidateIf((o) => o.type === OrderType.DINE_IN)
   @IsNotEmpty({ message: 'Table number is required for dine-in orders' })

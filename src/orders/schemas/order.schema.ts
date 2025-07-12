@@ -32,16 +32,19 @@ export enum PaymentMethod {
 
 export enum PaymentStatus {
   PENDING = 'pending',
+  PENDING_CONFIRMATION = 'pending_confirmation',
   PAID = 'paid',
   FAILED = 'failed',
   CANCELLED = 'cancelled',
   MANUAL_REVIEW = 'manual_review',
+  TIMEOUT = 'timeout',
 }
 
 export enum SelectedNetwork {
   MPESA = 'mpesa',
   TIGOPESA = 'tigopesa',
   AIRTEL_MONEY = 'airtel-money',
+  AZAMPESA = 'azampesa',
 }
 
 @Schema({ _id: false })
@@ -90,6 +93,12 @@ class PaymentDetails {
 
   @Prop({ type: DeliveryLocation })
   deliveryLocation?: DeliveryLocation;
+
+  @Prop()
+  payerName?: string;
+
+  @Prop()
+  merchantRef?: string;
 }
 
 const PaymentDetailsSchema = SchemaFactory.createForClass(PaymentDetails);
@@ -102,11 +111,7 @@ export class Order {
   @Prop({ type: [OrderItemSchema], required: true })
   items: OrderItem[];
 
-  @Prop({
-    enum: OrderType,
-    default: OrderType.DINE_IN,
-    required: true,
-  })
+  @Prop({ enum: OrderType, default: OrderType.DINE_IN, required: true })
   type: OrderType;
 
   @Prop({ enum: OrderStatus, default: OrderStatus.PENDING, index: true })

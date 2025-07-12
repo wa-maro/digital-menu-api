@@ -2,6 +2,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsOptional,
+  IsPhoneNumber,
   IsString,
   ValidateIf,
   ValidateNested,
@@ -16,12 +17,15 @@ import {
 class PaymentDetailsDto {
   @IsOptional()
   @IsEnum(SelectedNetwork, {
-    message: 'selectedNetwork must be one of: Mpesa, tigopesa',
+    message:
+      'selectedNetwork must be one of: mpesa, tigopesa, airtel-money, azampesa',
   })
   selectedNetwork?: SelectedNetwork;
 
   @IsOptional()
-  @IsString()
+  @IsPhoneNumber('TZ', {
+    message: 'phoneNumber must be a valid Tanzanian number',
+  })
   phoneNumber?: string;
 
   @ValidateIf((o) => o.type === OrderType.DINE_IN)

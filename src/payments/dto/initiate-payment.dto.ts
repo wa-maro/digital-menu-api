@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
 import {
   PaymentMethod,
   SelectedNetwork,
@@ -6,21 +6,24 @@ import {
 
 export class InitiatePaymentDto {
   @IsEnum(PaymentMethod, {
-    message: 'paymentMethod must be one of the defined PaymentMethod values',
+    message: 'paymentMethod must be one of: cash, lipa_namba',
   })
   paymentMethod: PaymentMethod;
 
   @IsEnum(SelectedNetwork, {
-    message: 'selectedNetwork must be one of: mpesa, tigopesa, airtel-money',
+    message:
+      'selectedNetwork must be one of: mpesa, tigopesa, airtel-money, azampesa',
   })
   selectedNetwork: SelectedNetwork;
 
-  @IsString()
+  @IsPhoneNumber('TZ', {
+    message: 'phoneNumber must be a valid Tanzanian number',
+  })
   phoneNumber: string;
 
   @IsOptional()
   @IsString()
-  sessionId?: string;
+  sessionId?: string; // Optional if reused or coming from frontend for retry
 
   @IsOptional()
   @IsString()
