@@ -5,6 +5,7 @@ import mongoose, { Model } from 'mongoose';
 import { UploadMediaDto } from './dto/upload-media.dto';
 import { MenuService } from 'src/menu/menu.service';
 import { escapeRegex } from 'src/common/helpers/regex.helper';
+import { FetchMediaQueryDto } from './dto/fetch-media.dto';
 
 interface MediaFilterQuery {
   category?: string;
@@ -43,8 +44,13 @@ export class MediaService {
     });
   }
 
-  async findAll(filters: { category?: string; name?: string }) {
+  async findAll(
+    filters: FetchMediaQueryDto,
+  ): Promise<{ items: Media[]; total: number }> {
     const query: MediaFilterQuery = {};
+    const page = Math.max(1, filters.page || 1);
+    const limit = Math.min(100, filters.limit || 10); // limit max to 100
+    const skip = (page - 1) * limit;
 
     // Resolve category by ID or name
     if (filters.category) {
@@ -52,7 +58,7 @@ export class MediaService {
         ? await this.menuService.getCategory(filters.category)
         : await this.menuService.getCategoryByName(filters.category);
 
-      if (!categoryDoc) return []; // No matching category
+      if (!categoryDoc) return { items: [], total: 0 }; // No matching category
       query.category = String(categoryDoc._id);
     }
 
@@ -62,6 +68,17 @@ export class MediaService {
       query.name = { $regex: escapedName, $options: 'i' };
     }
 
-    return this.mediaModel.find(query).sort({ createdAt: -1 });
+    const [items, total] = await Promise.all([
+      this.mediaModel
+        .find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .exec(),
+      this.mediaModel.countDocuments(query),
+    ]);
+
+    return { items, total };
   }
 }

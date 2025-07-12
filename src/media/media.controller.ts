@@ -14,6 +14,7 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { CustomRequest } from 'src/interfaces/custom-request.interface';
 
 import { UploadMediaDto } from './dto/upload-media.dto';
+import { FetchMediaQueryDto } from './dto/fetch-media.dto';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @Roles('manager', 'admin')
@@ -28,13 +29,7 @@ export class MediaController {
   }
 
   @Get()
-  async listMedia(
-    @Query('category') category?: string,
-    @Query('name') name?: string,
-  ) {
-    return this.mediaService.findAll({
-      category,
-      name,
-    });
+  async listMedia(@Query() query: FetchMediaQueryDto) {
+    return this.mediaService.findAll(query);
   }
 }
