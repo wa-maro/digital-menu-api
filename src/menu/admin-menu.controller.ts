@@ -6,6 +6,7 @@ import {
   Put,
   Post,
   UseGuards,
+  Get,
 } from '@nestjs/common';
 import { MenuService } from './menu.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -34,6 +35,11 @@ export class AdminMenuController {
     @Body() dto: UpdateCategoryDto,
   ) {
     return await this.menuService.updateCategory(id, dto);
+  }
+
+  @Get('categories/:id')
+  async getCategory(@Param('id') id: string) {
+    return await this.menuService.getCategory(id);
   }
 
   @Delete('categories/:id')

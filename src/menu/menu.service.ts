@@ -34,6 +34,17 @@ export class MenuService {
     return await this.categoryModel.find().lean().exec();
   }
 
+  async getCategory(id: string) {
+    if (!isValidObjectId(id))
+      throw new BadRequestException(`Invalid category ID: ${id}`);
+
+    const category = await this.categoryModel.findById(id);
+    if (!category)
+      throw new NotFoundException(`Category with ID "${id}" not found.`);
+
+    return category;
+  }
+
   async updateCategory(id: string, dto: UpdateCategoryDto) {
     if (!isValidObjectId(id))
       throw new BadRequestException(`Invalid category ID: ${id}`);
