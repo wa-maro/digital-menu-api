@@ -22,13 +22,11 @@ import { ReorderDto } from './dto/reorder.dto';
 export class CustomerOrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  // @Permissions('order:place')
   @Post()
   async placeOrder(@Body() dto: PlaceOrderDto, @Req() req: CustomRequest) {
     return await this.ordersService.placeOrder(req.user['userId'], dto);
   }
 
-  // @Permissions('order:place-from-cart')
   @Post('place-from-cart')
   async placeOrderFromCart(
     @Body() dto: PlaceFromCartDto,
@@ -50,7 +48,6 @@ export class CustomerOrdersController {
     );
   }
 
-  // @Permissions('order:read:own')
   @Get()
   async getMyOrders(@Req() req: CustomRequest) {
     return await this.ordersService.getUserOrders(req.user['userId']);

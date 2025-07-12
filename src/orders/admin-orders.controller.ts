@@ -20,19 +20,16 @@ import { ApproveCancelDto } from './dto/approve-cancel.dto';
 export class AdminOrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  // @Permissions('order:read:all')
   @Get('all')
   async getAllOrders() {
     return await this.ordersService.getAllOrders();
   }
 
-  // @Permissions('order:read')
   @Get(':id')
   async getOrder(@Param('id') id: string) {
     return await this.ordersService.getOrderByIdForAdmin(id);
   }
 
-  // @Permissions('order:update:status')
   @Put(':id/status')
   async updateOrderStatus(
     @Param('id') id: string,

@@ -55,8 +55,6 @@ export class AdminPaymentController {
       `Payment ${transactionId} status updated to ${status} by admin`,
     );
 
-    console.log(updatedPayment._id);
-
     return PaymentResponseDto.from(updatedPayment);
   }
 }
