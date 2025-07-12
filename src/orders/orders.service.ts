@@ -19,6 +19,7 @@ import { PlaceFromCartDto } from './dto/place-from-cart.dto';
 import { ReorderDto } from './dto/reorder.dto';
 import { OrdersGateway } from './orders.gateway';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
+import { ManualPaymentConfirmationDto } from 'src/payments/dto/manual-payment-confirmation.dto';
 
 type OrderTransitionMap = { [K in OrderStatus]?: OrderStatus[] };
 
@@ -330,6 +331,48 @@ export class OrdersService {
     order.status = status;
     await order.save();
     this.orderGateway.emitOrderStatusUpdate(orderId, status);
+    return order;
+  }
+
+  async confirmManualPayment(
+    orderId: string,
+    dto: ManualPaymentConfirmationDto,
+  ) {
+    if (!isValidObjectId(orderId))
+      throw new BadRequestException('Invalid order ID');
+
+    const order = await this.orderModel.findById(orderId);
+    if (!order) throw new NotFoundException('Order not found');
+
+    // Prevent confirming already paid/cancelled/failed orders
+    if (
+      [
+        PaymentStatus.PAID,
+        PaymentStatus.FAILED,
+        PaymentStatus.CANCELLED,
+      ].includes(order.paymentStatus)
+    ) {
+      throw new BadRequestException(
+        `Cannot manually confirm a payment in '${order.paymentStatus}' status`,
+      );
+    }
+
+    order.paymentStatus = PaymentStatus.MANUAL_REVIEW;
+    order.paymentDetails ??= {};
+    order.paymentDetails.userEnteredTransactionId = dto.transactionId;
+    order.paymentDetails.phoneNumber = dto.phoneNumber;
+    order.paymentDetails.paidAt = new Date();
+
+    order.paymentLog = [
+      ...(order.paymentLog || []),
+      {
+        status: PaymentStatus.MANUAL_REVIEW,
+        timestamp: new Date(),
+        message: 'Manual payment confirmation submitted',
+      },
+    ];
+
+    await order.save();
     return order;
   }
 }
