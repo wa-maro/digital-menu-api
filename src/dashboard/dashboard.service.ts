@@ -40,4 +40,21 @@ export class DashboardService {
       activeUsers,
     };
   }
+
+  async getRecentOrders() {
+    // const twentyFourHoursAgo = new Date(Date.now() - 1024 * 60 * 60 * 1000);
+
+    return (
+      this.orderModel
+        // .find({ createdAt: { $gte: twentyFourHoursAgo } })
+        .find()
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .populate([
+          { path: 'user', select: 'name email' },
+          { path: 'items.item', select: 'name price' },
+        ])
+        .lean()
+    );
+  }
 }

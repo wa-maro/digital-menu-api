@@ -14,4 +14,9 @@ export class DashboardController {
   getSummary() {
     return this.dashboardService.getSummary();
   }
+
+  @Get('recent-orders')
+  getRecentOrders() {
+    return this.dashboardService.getRecentOrders();
+  }
 }
