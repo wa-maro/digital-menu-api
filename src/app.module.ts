@@ -10,6 +10,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { DashboardService } from './dashboard/dashboard.service';
 import { DashboardController } from './dashboard/dashboard.controller';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { MediaModule } from './media/media.module';
 import Joi from 'joi';
 
 @Module({
@@ -29,6 +30,7 @@ import Joi from 'joi';
     CartModule,
     PaymentsModule,
     DashboardModule,
+    MediaModule,
   ],
   providers: [DashboardService],
   controllers: [DashboardController],

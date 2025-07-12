@@ -22,6 +22,6 @@ import { AdminOrdersController } from './admin-orders.controller';
     CustomerCartController,
   ],
   providers: [OrdersService, CartService, OrdersGateway],
-  exports: [OrdersService, MongooseModule],
+  exports: [MongooseModule, OrdersService],
 })
 export class OrdersModule {}
