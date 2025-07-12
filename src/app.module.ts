@@ -7,6 +7,9 @@ import { MenuModule } from './menu/menu.module';
 import { OrdersModule } from './orders/orders.module';
 import { CartModule } from './cart/cart.module';
 import { PaymentsModule } from './payments/payments.module';
+import { DashboardService } from './dashboard/dashboard.service';
+import { DashboardController } from './dashboard/dashboard.controller';
+import { DashboardModule } from './dashboard/dashboard.module';
 import Joi from 'joi';
 
 @Module({
@@ -25,6 +28,9 @@ import Joi from 'joi';
     OrdersModule,
     CartModule,
     PaymentsModule,
+    DashboardModule,
   ],
+  providers: [DashboardService],
+  controllers: [DashboardController],
 })
 export class AppModule {}

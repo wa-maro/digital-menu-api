@@ -13,5 +13,6 @@ import { OrdersModule } from 'src/orders/orders.module';
   ],
   controllers: [CustomerPaymentController, AdminPaymentController],
   providers: [PaymentsService],
+  exports: [MongooseModule],
 })
 export class PaymentsModule {}

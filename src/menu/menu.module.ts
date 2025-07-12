@@ -15,5 +15,6 @@ import { AdminMenuController } from './admin-menu.controller';
   ],
   providers: [MenuService],
   controllers: [PublicMenuController, AdminMenuController],
+  exports: [MongooseModule],
 })
 export class MenuModule {}
