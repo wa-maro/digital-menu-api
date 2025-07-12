@@ -11,6 +11,7 @@ import { CreateItemDto } from './dto/create-item.dto';
 import { isValidObjectId, Model } from 'mongoose';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
+import { escapeRegex } from 'src/common/helpers/regex.helper';
 
 @Injectable()
 export class MenuService {
@@ -34,15 +35,24 @@ export class MenuService {
     return await this.categoryModel.find().lean().exec();
   }
 
-  async getCategory(id: string) {
-    if (!isValidObjectId(id))
+  async getCategory(id: string): Promise<CategoryDocument> {
+    if (!isValidObjectId(id)) {
       throw new BadRequestException(`Invalid category ID: ${id}`);
+    }
 
     const category = await this.categoryModel.findById(id);
-    if (!category)
+    if (!category) {
       throw new NotFoundException(`Category with ID "${id}" not found.`);
+    }
 
     return category;
+  }
+
+  async getCategoryByName(name: string): Promise<CategoryDocument | null> {
+    const escapedName = escapeRegex(name); // avoid regex injection if needed
+    return this.categoryModel.findOne({
+      name: { $regex: escapedName, $options: 'i' }, // partial match, case-insensitive
+    });
   }
 
   async updateCategory(id: string, dto: UpdateCategoryDto) {

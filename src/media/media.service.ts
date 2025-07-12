@@ -1,9 +1,15 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Media } from './schemas/media.schema';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { UploadMediaDto } from './dto/upload-media.dto';
 import { MenuService } from 'src/menu/menu.service';
+import { escapeRegex } from 'src/common/helpers/regex.helper';
+
+interface MediaFilterQuery {
+  category?: string;
+  name?: { $regex: string; $options: string };
+}
 
 @Injectable()
 export class MediaService {
@@ -35,5 +41,27 @@ export class MediaService {
       linkedMenuItemIds,
       uploadedBy,
     });
+  }
+
+  async findAll(filters: { category?: string; name?: string }) {
+    const query: MediaFilterQuery = {};
+
+    // Resolve category by ID or name
+    if (filters.category) {
+      const categoryDoc = mongoose.Types.ObjectId.isValid(filters.category)
+        ? await this.menuService.getCategory(filters.category)
+        : await this.menuService.getCategoryByName(filters.category);
+
+      if (!categoryDoc) return []; // No matching category
+      query.category = String(categoryDoc._id);
+    }
+
+    // Filter by name (partial, case-insensitive)
+    if (filters.name) {
+      const escapedName = escapeRegex(filters.name);
+      query.name = { $regex: escapedName, $options: 'i' };
+    }
+
+    return this.mediaModel.find(query).sort({ createdAt: -1 });
   }
 }

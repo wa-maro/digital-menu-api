@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RoleGuard } from 'src/common/guards/roles.guard';
 import { MediaService } from './media.service';
@@ -17,5 +25,16 @@ export class MediaController {
   async createMedia(@Body() dto: UploadMediaDto, @Req() req: CustomRequest) {
     const uploadedBy = req.user.userId;
     return this.mediaService.createMediaRecord(dto, uploadedBy);
+  }
+
+  @Get()
+  async listMedia(
+    @Query('category') category?: string,
+    @Query('name') name?: string,
+  ) {
+    return this.mediaService.findAll({
+      category,
+      name,
+    });
   }
 }
