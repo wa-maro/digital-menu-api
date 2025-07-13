@@ -71,6 +71,12 @@ export class MediaService {
     const [items, total] = await Promise.all([
       this.mediaModel
         .find(query)
+        .populate('category')
+        .populate({
+          path: 'linkedMenuItemIds',
+          select: 'name price',
+        })
+        .populate({ path: 'uploadedBy', select: 'fullName email' })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
