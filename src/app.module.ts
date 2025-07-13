@@ -12,6 +12,8 @@ import { DashboardController } from './dashboard/dashboard.controller';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { MediaModule } from './media/media.module';
 import Joi from 'joi';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -21,6 +23,10 @@ import Joi from 'joi';
         JWT_SECRET: Joi.string().min(10).required().label('JWT_SECRET'),
         JWT_EXPIRES_IN: Joi.string().default('7d'),
       }),
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads', 'media'),
+      serveRoot: '/uploads/media',
     }),
     MongooseModule.forRoot(process.env.MONGODB_URI || ''),
     UserModule,

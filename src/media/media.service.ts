@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -12,9 +11,6 @@ import { UploadMediaDto } from './dto/upload-media.dto';
 import { MenuService } from 'src/menu/menu.service';
 import { escapeRegex } from 'src/common/helpers/regex.helper';
 import { FetchMediaQueryDto } from './dto/fetch-media.dto';
-import { firebaseStorage } from 'src/firebase/firebase.config';
-import * as path from 'path';
-import { v4 as uuidv4 } from 'uuid';
 
 interface MediaFilterQuery {
   category?: string;
