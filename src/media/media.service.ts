@@ -6,11 +6,14 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Media } from './schemas/media.schema';
-import mongoose, { isValidObjectId, Model } from 'mongoose';
+import mongoose, { isValidObjectId, Model, Types } from 'mongoose';
 import { UploadMediaDto } from './dto/upload-media.dto';
 import { MenuService } from 'src/menu/menu.service';
 import { escapeRegex } from 'src/common/helpers/regex.helper';
 import { FetchMediaQueryDto } from './dto/fetch-media.dto';
+import { join } from 'path';
+import * as fs from 'fs';
+import { UpdateMediaDto } from './dto/update-media.dto';
 
 interface MediaFilterQuery {
   category?: string;
@@ -111,5 +114,37 @@ export class MediaService {
     }
 
     return media;
+  }
+
+  async updateMedia(id: string, dto: UpdateMediaDto) {
+    if (!isValidObjectId(id))
+      throw new BadRequestException(`Invalid media ID: ${id}`);
+
+    if (dto.category && !isValidObjectId(dto.category))
+      throw new BadRequestException(`Invalid category ID: ${dto.category}`);
+
+    const media = await this.mediaModel.findById(id);
+    if (!media) throw new NotFoundException('Media not found');
+
+    // Handle image change
+    if (dto.name && dto.name !== media.name) {
+      const oldFilePath = join(process.cwd(), 'uploads/media', media.name);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+
+      media.name = dto.name;
+    }
+
+    if (dto.url) media.url = dto.url;
+    if (dto.category) media.category = new Types.ObjectId(dto.category);
+    if (dto.linkedMenuItemIds)
+      media.linkedMenuItemIds = dto.linkedMenuItemIds.map(
+        (id) => new Types.ObjectId(id),
+      );
+
+    const updatedMedia = await media.save();
+
+    return updatedMedia;
   }
 }

@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -22,6 +23,7 @@ import { FetchMediaQueryDto } from './dto/fetch-media.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { UpdateMediaDto } from './dto/update-media.dto';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @Roles('manager', 'admin')
@@ -42,6 +44,11 @@ export class MediaController {
   @Get(':id')
   async getMedia(@Param('id') id: string) {
     return this.mediaService.findOneById(id);
+  }
+
+  @Patch(':id')
+  async updateMedia(@Param('id') id: string, @Body() dto: UpdateMediaDto) {
+    return this.mediaService.updateMedia(id, dto);
   }
 
   @Post('upload')
