@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Query,
   Req,
@@ -31,5 +32,10 @@ export class MediaController {
   @Get()
   async listMedia(@Query() query: FetchMediaQueryDto) {
     return this.mediaService.findAll(query);
+  }
+
+  @Get(':id')
+  async getMedia(@Param('id') id: string) {
+    return this.mediaService.findOneById(id);
   }
 }

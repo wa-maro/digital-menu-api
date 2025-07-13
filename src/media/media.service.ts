@@ -1,11 +1,20 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Media } from './schemas/media.schema';
-import mongoose, { Model } from 'mongoose';
+import mongoose, { isValidObjectId, Model } from 'mongoose';
 import { UploadMediaDto } from './dto/upload-media.dto';
 import { MenuService } from 'src/menu/menu.service';
 import { escapeRegex } from 'src/common/helpers/regex.helper';
 import { FetchMediaQueryDto } from './dto/fetch-media.dto';
+import { firebaseStorage } from 'src/firebase/firebase.config';
+import * as path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 interface MediaFilterQuery {
   category?: string;
@@ -87,4 +96,58 @@ export class MediaService {
 
     return { items, total };
   }
+
+  async findOneById(id: string) {
+    if (!isValidObjectId(id)) throw new BadRequestException('Invalid media ID');
+
+    const media = await this.mediaModel
+      .findById(id)
+      .populate('category')
+      .populate({
+        path: 'linkedMenuItemIds',
+        select: 'name price',
+      })
+      .populate({ path: 'uploadedBy', select: 'fullName email' })
+      .lean()
+      .exec();
+    if (!media) {
+      throw new NotFoundException(`Media with ID "${id}" not found.`);
+    }
+
+    return media;
+  }
+
+  // async uploadToFirebase(file: Express.Multer.File, uploadedBy: string) {
+  //   const fileName = `${Date.now()}_${uuidv4()}${path.extname(file.originalname)}`;
+  //   const fileUpload = firebaseStorage.file(`media/${fileName}`);
+
+  //   const stream = fileUpload.createWriteStream({
+  //     metadata: {
+  //       contentType: file.mimetype,
+  //       metadata: {
+  //         firebaseStorageDownloadTokens: uuidv4(),
+  //       },
+  //     },
+  //   });
+
+  //   return new Promise((resolve, reject) => {
+  //     stream.on('error', (error) => {
+  //       console.error(error);
+  //       reject(new InternalServerErrorException('Failed to upload file'));
+  //     });
+
+  //     stream.on('finish', async () => {
+  //       const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseStorage.name}/o/${encodeURIComponent(
+  //         fileUpload.name,
+  //       )}?alt=media`;
+  //       resolve({
+  //         url: publicUrl,
+  //         name: file.originalname,
+  //         uploadedBy,
+  //       });
+  //     });
+
+  //     stream.end(file.buffer);
+  //   });
+  // }
 }
