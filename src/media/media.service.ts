@@ -105,7 +105,7 @@ export class MediaService {
       .populate('category')
       .populate({
         path: 'linkedMenuItemIds',
-        select: 'name price',
+        select: 'name price imageURL',
       })
       .populate({ path: 'uploadedBy', select: 'fullName email' })
       .lean()
@@ -116,38 +116,4 @@ export class MediaService {
 
     return media;
   }
-
-  // async uploadToFirebase(file: Express.Multer.File, uploadedBy: string) {
-  //   const fileName = `${Date.now()}_${uuidv4()}${path.extname(file.originalname)}`;
-  //   const fileUpload = firebaseStorage.file(`media/${fileName}`);
-
-  //   const stream = fileUpload.createWriteStream({
-  //     metadata: {
-  //       contentType: file.mimetype,
-  //       metadata: {
-  //         firebaseStorageDownloadTokens: uuidv4(),
-  //       },
-  //     },
-  //   });
-
-  //   return new Promise((resolve, reject) => {
-  //     stream.on('error', (error) => {
-  //       console.error(error);
-  //       reject(new InternalServerErrorException('Failed to upload file'));
-  //     });
-
-  //     stream.on('finish', async () => {
-  //       const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseStorage.name}/o/${encodeURIComponent(
-  //         fileUpload.name,
-  //       )}?alt=media`;
-  //       resolve({
-  //         url: publicUrl,
-  //         name: file.originalname,
-  //         uploadedBy,
-  //       });
-  //     });
-
-  //     stream.end(file.buffer);
-  //   });
-  // }
 }
