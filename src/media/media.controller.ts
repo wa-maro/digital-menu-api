@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -10,7 +11,6 @@ import {
   Req,
   UploadedFile,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RoleGuard } from 'src/common/guards/roles.guard';
@@ -63,5 +63,10 @@ export class MediaController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     return this.mediaService.updateMediaFile(id, req.user.userId, dto, file);
+  }
+
+  @Delete(':id')
+  async deleteMedia(@Param('id') id: string) {
+    return this.mediaService.deleteMediaFile(id);
   }
 }

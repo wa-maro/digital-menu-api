@@ -154,6 +154,19 @@ export class MediaService {
     return await media.save();
   }
 
+  async deleteMediaFile(id: string) {
+    if (!isValidObjectId(id))
+      throw new BadRequestException(`Invalid media ID: ${id}`);
+
+    const media = await this.findOneById(id);
+
+    await this.deleteOldFile(media.filename);
+
+    await this.mediaModel.deleteOne({ _id: media._id });
+
+    return { message: 'Media deleted successfully', id };
+  }
+
   private async uploadMediaFile(
     file: Express.Multer.File,
   ): Promise<{ url: string; filename: string }> {
