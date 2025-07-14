@@ -3,11 +3,9 @@ import {
   Body,
   Controller,
   Delete,
-  Get,
   Param,
   Patch,
   Post,
-  Query,
   Req,
   UploadedFile,
   UseGuards,
@@ -19,17 +17,13 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { CustomRequest } from 'src/interfaces/custom-request.interface';
 
 import { UploadMediaDto } from './dto/upload-media.dto';
-import { FetchMediaQueryDto } from './dto/fetch-media.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { UpdateMediaDto } from './dto/update-media.dto';
 import { ImageUpload } from 'src/common/decorators/image-upload.decorator';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @Roles('manager', 'admin')
 @Controller('admin/media')
-export class MediaController {
+export class AdminMediaController {
   constructor(private readonly mediaService: MediaService) {}
 
   @Post('creation')
@@ -42,16 +36,6 @@ export class MediaController {
     if (!file) throw new BadRequestException('Image file is required');
 
     return this.mediaService.createMediaFile(file, dto, req.user.userId);
-  }
-
-  @Get()
-  async listMedia(@Query() query: FetchMediaQueryDto) {
-    return this.mediaService.findAll(query);
-  }
-
-  @Get(':id')
-  async getMedia(@Param('id') id: string) {
-    return this.mediaService.findOneById(id);
   }
 
   @Patch(':id')

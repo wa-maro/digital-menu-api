@@ -32,7 +32,7 @@ export class MediaService {
   ): Promise<{ items: Media[]; total: number }> {
     const query: MediaFilterQuery = {};
     const page = Math.max(1, filters.page || 1);
-    const limit = Math.min(100, filters.limit || 10); // limit max to 100
+    const limit = Math.min(100, filters.limit || 50); // limit max to 100
     const skip = (page - 1) * limit;
 
     // Resolve category by ID or name
