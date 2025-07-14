@@ -20,6 +20,10 @@ import { CustomRequest } from 'src/interfaces/custom-request.interface';
 
 import { UploadMediaDto } from './dto/upload-media.dto';
 import { FetchMediaQueryDto } from './dto/fetch-media.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { UpdateMediaDto } from './dto/update-media.dto';
 import { ImageUpload } from 'src/common/decorators/image-upload.decorator';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
@@ -48,5 +52,16 @@ export class MediaController {
   @Get(':id')
   async getMedia(@Param('id') id: string) {
     return this.mediaService.findOneById(id);
+  }
+
+  @Patch(':id')
+  @ImageUpload()
+  async updateMedia(
+    @Param('id') id: string,
+    @Body() dto: UpdateMediaDto,
+    @Req() req: CustomRequest,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.mediaService.updateMediaFile(id, req.user.userId, dto, file);
   }
 }

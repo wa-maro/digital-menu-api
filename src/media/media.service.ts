@@ -120,6 +120,40 @@ export class MediaService {
     return await media.save();
   }
 
+  async updateMediaFile(
+    id: string,
+    userId: string,
+    dto: UpdateMediaDto,
+    file?: Express.Multer.File,
+  ) {
+    const { displayName, category } = dto;
+
+    if (!isValidObjectId(id))
+      throw new BadRequestException(`Invalid media ID: ${id}`);
+
+    if (category && !isValidObjectId(category))
+      throw new BadRequestException(`Invalid category ID: ${dto.category}`);
+
+    const media = await this.mediaModel.findById(id);
+    if (!media) throw new NotFoundException('Media not found');
+
+    if (file) {
+      const { filename, url } = await this.uploadMediaFile(file);
+
+      await this.deleteOldFile(media.filename);
+
+      media.filename = filename;
+      media.url = url;
+    }
+
+    if (displayName) media.displayName = displayName;
+    if (category) media.category = new Types.ObjectId(category);
+
+    media.uploadedBy = new Types.ObjectId(userId);
+
+    return await media.save();
+  }
+
   private async uploadMediaFile(
     file: Express.Multer.File,
   ): Promise<{ url: string; filename: string }> {
@@ -131,5 +165,18 @@ export class MediaService {
       url,
       filename: file.filename,
     };
+  }
+
+  private async deleteOldFile(filename: string) {
+    const oldFilePath = path.join(process.cwd(), 'uploads/media', filename);
+
+    try {
+      await fs.unlink(oldFilePath);
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        // Ignore "file not found" errors
+        console.error(`Failed to delete file ${filename}:`, err.message);
+      }
+    }
   }
 }
