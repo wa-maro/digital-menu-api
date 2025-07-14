@@ -3,10 +3,13 @@ import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Media extends Document {
-  @Prop({ required: true })
-  name: string;
+  @Prop({ required: true, unique: true })
+  displayName: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
+  filename: string;
+
+  @Prop({ required: true, unique: true })
   url: string;
 
   @Prop({ type: Types.ObjectId, ref: 'Category', required: true })
