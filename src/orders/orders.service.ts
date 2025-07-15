@@ -83,7 +83,7 @@ export class OrdersService {
         ? PaymentStatus.PENDING
         : PaymentStatus.PENDING;
 
-    return await this.orderModel.create({
+    const newOrder = await this.orderModel.create({
       user: userId,
       items,
       type: dto.type,
@@ -99,6 +99,10 @@ export class OrdersService {
       ],
       paymentDetails: dto.paymentDetails,
     });
+
+    await this.cartService.clearCart(userId);
+
+    return newOrder;
   }
 
   async placeOrderFromCart(userId: string, dto: PlaceFromCartDto) {
@@ -184,7 +188,9 @@ export class OrdersService {
       total,
     });
 
-    return newOrder.save();
+    await this.cartService.clearCart(userId);
+
+    return newOrder;
   }
 
   async getUserOrders(userId: string) {
