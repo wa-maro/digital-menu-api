@@ -14,6 +14,7 @@ import { MediaModule } from './media/media.module';
 import Joi from 'joi';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { SharedModule } from './shared.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { join } from 'path';
         JWT_EXPIRES_IN: Joi.string().default('7d'),
       }),
     }),
+    SharedModule,
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads', 'media'),
       serveRoot: '/uploads/media',

@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -10,12 +11,19 @@ import { InjectModel } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import * as jwt from 'jsonwebtoken';
+import * as crypto from 'crypto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtservice: JwtService,
+    private configService: ConfigService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -52,6 +60,34 @@ export class AuthService {
 
     // return valid user as payload
     return this.signPayload(user);
+  }
+
+  async logout(token: string) {
+    try {
+      const secret = this.configService.get<string>('JWT_SECRET');
+      if (!secret) throw new Error('JWT_SECRET is not configured.');
+
+      const decoded: any = jwt.verify(token, secret);
+
+      const exp = decoded.exp;
+      if (!exp) throw new Error('Token does not have an expiration.');
+
+      const ttl = exp - Math.floor(Date.now() / 1000);
+
+      // Use hash of the token to avoid storing the whole token in Redis
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+      await this.cacheManager.set(`blacklist_${tokenHash}`, true, ttl);
+
+      return { message: 'Logged out successfully' };
+    } catch (error) {
+      throw new Error('Invalid token');
+    }
+  }
+
+  async isBlacklisted(token: string): Promise<boolean> {
+    const result = await this.cacheManager.get(`blacklist_${token}`);
+    return !!result;
   }
 
   private signPayload(user: UserDocument) {

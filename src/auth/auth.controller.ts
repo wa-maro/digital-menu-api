@@ -1,7 +1,15 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { Request } from 'express';
+import { ExtractJwt } from 'passport-jwt';
 
 @Controller('auth')
 export class AuthController {
@@ -15,5 +23,15 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: LoginDto) {
     return await this.authService.login(dto);
+  }
+
+  @Post('logout')
+  async logout(@Req() req: Request) {
+    const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+
+    if (!token)
+      throw new UnauthorizedException('Token is missing or malformed');
+
+    return this.authService.logout(token);
   }
 }
