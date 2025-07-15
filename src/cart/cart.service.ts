@@ -14,7 +14,7 @@ export class CartService {
 
   async geCarts() {
     return await this.cartModel
-      .find()
+      .find({ 'items.0': { $exists: true } })
       .populate('user', 'fullName email')
       .populate('items.item')
       .lean()
