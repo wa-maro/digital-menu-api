@@ -292,7 +292,7 @@ export class OrdersService {
   async getAllOrders() {
     return await this.orderModel
       .find()
-      .populate('user', 'email role')
+      .populate('user', 'fullName email')
       .populate('items.item', 'name price')
       .sort({ createdAt: -1 })
       .lean()

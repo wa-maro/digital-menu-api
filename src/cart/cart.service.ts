@@ -15,7 +15,7 @@ export class CartService {
   async geCarts() {
     return await this.cartModel
       .find()
-      .populate('user')
+      .populate('user', 'fullName email')
       .populate('items.item')
       .lean()
       .exec();
