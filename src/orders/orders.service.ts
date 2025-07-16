@@ -22,38 +22,8 @@ import { ManualPaymentConfirmationDto } from 'src/payments/dto/manual-payment-co
 import { PaymentStatusQueryDto } from 'src/payments/dto/payment-status-query.dto';
 import { OrderCounterService } from './order-counter.service';
 import { TransactionCounterService } from './transaction-counter.service';
-
-type OrderTransitionMap = { [K in OrderStatus]?: OrderStatus[] };
-
-export const allowedOrderTransitionMap: OrderTransitionMap = {
-  [OrderStatus.PENDING]: [
-    OrderStatus.CONFIRMED,
-    OrderStatus.CANCEL_REQUEST,
-    OrderStatus.FAILED,
-  ],
-  [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCEL_REQUEST],
-  [OrderStatus.CANCEL_REQUEST]: [
-    OrderStatus.CANCELLED,
-    OrderStatus.REJECTED_CANCEL_REQUEST,
-  ],
-  [OrderStatus.PREPARING]: [OrderStatus.READY],
-  [OrderStatus.READY]: [
-    OrderStatus.COMPLETED, // ORDER TYPE = DINE-IN
-    OrderStatus.PICKED, // ORDER TYPE = TAKEAWAY
-    OrderStatus.OUT_FOR_DELIVERY, // ORDER TYPE = DELIVERY
-  ],
-  [OrderStatus.PICKED]: [OrderStatus.COMPLETED],
-  [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED],
-  [OrderStatus.DELIVERED]: [OrderStatus.COMPLETED],
-  [OrderStatus.COMPLETED]: [],
-  [OrderStatus.CANCELLED]: [],
-  [OrderStatus.REJECTED_CANCEL_REQUEST]: [],
-  [OrderStatus.FAILED]: [],
-};
-
-export function canStatusTransit(from: OrderStatus, to: OrderStatus): boolean {
-  return allowedOrderTransitionMap[from]?.includes(to) ?? false;
-}
+import { canStatusTransit } from 'src/common/utils/order-status.transition';
+import { canPaymentStatusTransit } from 'src/common/utils/manual-payment-status.transition';
 
 @Injectable()
 export class OrdersService {
@@ -362,11 +332,13 @@ export class OrdersService {
     const order = await this.orderModel.findOne({ _id: orderId });
     if (!order) throw new NotFoundException('Order not found');
 
+    // Prevent confirming payments that are already final
     if (
       [
         PaymentStatus.PAID,
         PaymentStatus.FAILED,
         PaymentStatus.CANCELLED,
+        PaymentStatus.REFUNDED,
       ].includes(order.paymentStatus)
     ) {
       throw new BadRequestException(
@@ -374,9 +346,19 @@ export class OrdersService {
       );
     }
 
-    if (order.paymentStatus === PaymentStatus.MANUAL_REVIEW) {
+    if (order.paymentStatus === PaymentStatus.MANUAL_REVIEW)
       throw new BadRequestException('Payment is already under manual review');
-    }
+
+    const isValidNext = canPaymentStatusTransit(
+      order.paymentStatus,
+      PaymentStatus.MANUAL_REVIEW,
+      'manual',
+    );
+
+    if (!isValidNext)
+      throw new BadRequestException(
+        `Invalid payment status transition from ${order.paymentStatus} to ${PaymentStatus.MANUAL_REVIEW}`,
+      );
 
     // Generate transactionId if not provided (for cash)
     const transactionId =
@@ -386,10 +368,12 @@ export class OrdersService {
     const now = new Date();
 
     order.paymentStatus = PaymentStatus.MANUAL_REVIEW;
-    order.paymentDetails ??= {};
-    order.paymentDetails.userEnteredTransactionId = transactionId;
-    order.paymentDetails.phoneNumber = dto.phoneNumber;
-    order.paymentDetails.paidAt = now;
+    order.paymentDetails = {
+      ...(order.paymentDetails || {}),
+      userEnteredTransactionId: transactionId,
+      phoneNumber: dto.phoneNumber,
+      paidAt: now,
+    };
 
     order.paymentLog = [
       ...(order.paymentLog || []),
