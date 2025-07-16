@@ -306,7 +306,11 @@ export class OrdersService {
   }
 
   async requestCancel(orderId: string, userId: string) {
-    const order = await this.getOrderById(orderId, userId);
+    const order = await this.orderModel.findOne({ _id: orderId, user: userId });
+
+    if (!order) throw new NotFoundException(`Order not found`);
+
+    if (order.status === OrderStatus.CANCEL_REQUEST) return order;
 
     const isValidNext = canStatusTransit(
       order.status,
@@ -318,6 +322,7 @@ export class OrdersService {
 
     order.status = OrderStatus.CANCEL_REQUEST;
     await order.save();
+
     this.orderGateway.emitOrderStatusUpdate(
       orderId,
       OrderStatus.CANCEL_REQUEST,

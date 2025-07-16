@@ -43,8 +43,11 @@ export class AdminOrdersController {
     return await this.ordersService.updateOrderStatus(id, dto.status);
   }
 
-  @Post(':id/approve-to-cancel')
-  async approveCancel(@Param('id') id: string, @Body() dto: ApproveCancelDto) {
+  @Post(':id/process-cancellation')
+  async processCancellation(
+    @Param('id') id: string,
+    @Body() dto: ApproveCancelDto,
+  ) {
     return await this.ordersService.approveOrRejectCancel(id, dto.status);
   }
 
