@@ -51,19 +51,11 @@ export class AdminOrdersController {
     return await this.ordersService.approveOrRejectCancel(id, dto.status);
   }
 
-  @Post('manual-confirm/:orderId')
+  @Post(':orderId/confirm-manual-payment')
   async confirmManualPayment(
     @Param('orderId') orderId: string,
     @Body() dto: ManualPaymentConfirmationDto,
-    @Req() req: CustomRequest,
   ) {
-    const order = await this.ordersService.getOrderById(
-      orderId,
-      req.user['userId'],
-    );
-
-    if (!order) throw new NotFoundException('Order not found');
-
     return await this.ordersService.confirmManualPayment(orderId, dto);
   }
 

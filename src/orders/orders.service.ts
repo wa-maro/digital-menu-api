@@ -21,6 +21,7 @@ import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { ManualPaymentConfirmationDto } from 'src/payments/dto/manual-payment-confirmation.dto';
 import { PaymentStatusQueryDto } from 'src/payments/dto/payment-status-query.dto';
 import { OrderCounterService } from './order-counter.service';
+import { TransactionCounterService } from './transaction-counter.service';
 
 type OrderTransitionMap = { [K in OrderStatus]?: OrderStatus[] };
 
@@ -58,6 +59,7 @@ export function canStatusTransit(from: OrderStatus, to: OrderStatus): boolean {
 export class OrdersService {
   constructor(
     private readonly orderCounterService: OrderCounterService,
+    private readonly transactionCounterService: TransactionCounterService,
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
     private readonly cartService: CartService,
     private readonly orderGateway: OrdersGateway,
@@ -357,10 +359,9 @@ export class OrdersService {
     if (!isValidObjectId(orderId))
       throw new BadRequestException('Invalid order ID');
 
-    const order = await this.orderModel.findById(orderId);
+    const order = await this.orderModel.findOne({ _id: orderId });
     if (!order) throw new NotFoundException('Order not found');
 
-    // Prevent confirming already paid/cancelled/failed orders
     if (
       [
         PaymentStatus.PAID,
@@ -373,23 +374,39 @@ export class OrdersService {
       );
     }
 
+    if (order.paymentStatus === PaymentStatus.MANUAL_REVIEW) {
+      throw new BadRequestException('Payment is already under manual review');
+    }
+
+    // Generate transactionId if not provided (for cash)
+    const transactionId =
+      dto.transactionId ||
+      (await this.transactionCounterService.getNextTransactionNumber());
+
+    const now = new Date();
+
     order.paymentStatus = PaymentStatus.MANUAL_REVIEW;
     order.paymentDetails ??= {};
-    order.paymentDetails.userEnteredTransactionId = dto.transactionId;
+    order.paymentDetails.userEnteredTransactionId = transactionId;
     order.paymentDetails.phoneNumber = dto.phoneNumber;
-    order.paymentDetails.paidAt = new Date();
+    order.paymentDetails.paidAt = now;
 
     order.paymentLog = [
       ...(order.paymentLog || []),
       {
         status: PaymentStatus.MANUAL_REVIEW,
-        timestamp: new Date(),
-        message: 'Manual payment confirmation submitted',
+        timestamp: now,
+        message: `Manual payment confirmation submitted. TxID: ${transactionId}, Phone: ${dto.phoneNumber}`,
       },
     ];
 
     await order.save();
-    return order;
+
+    return {
+      message: 'Manual payment submitted for review',
+      orderId: order.orderId,
+      transactionId,
+    };
   }
 
   async queryPaymentStatus(dto: PaymentStatusQueryDto) {
