@@ -238,18 +238,18 @@ export class OrdersService {
     return order;
   }
 
-  async updateOrderStatus(id: string, dto: UpdateStatusDto) {
+  async updateOrderStatus(id: string, status: OrderStatus) {
     const order = await this.orderModel.findById(id);
     if (!order) throw new NotFoundException(`Order with ID ${id} not found`);
 
-    const isValidNext = canStatusTransit(order.status, dto.status);
+    const isValidNext = canStatusTransit(order.status, status);
 
     if (!isValidNext)
       throw new BadRequestException(
-        `Invalid status transition from ${order.status} to ${dto.status}`,
+        `Invalid status transition from ${order.status} to ${status}`,
       );
 
-    order.status = dto.status;
+    order.status = status;
 
     if (order.status === OrderStatus.CONFIRMED) {
       order.confirmedAt = new Date();
@@ -261,9 +261,9 @@ export class OrdersService {
 
     await order.save();
 
-    this.orderGateway.emitOrderStatusUpdate(id, dto.status);
+    this.orderGateway.emitOrderStatusUpdate(id, status);
 
-    return order;
+    return await this.getOrderByIdForAdmin(id);
   }
 
   async updatePaymentStatus(orderId: string, dto: UpdatePaymentStatusDto) {

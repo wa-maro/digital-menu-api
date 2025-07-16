@@ -35,12 +35,12 @@ export class AdminOrdersController {
     return await this.ordersService.getOrderByIdForAdmin(id);
   }
 
-  @Put(':id/status')
+  @Put(':id/update-status')
   async updateOrderStatus(
     @Param('id') id: string,
     @Body() dto: UpdateStatusDto,
   ) {
-    return await this.ordersService.updateOrderStatus(id, dto);
+    return await this.ordersService.updateOrderStatus(id, dto.status);
   }
 
   @Post(':id/approve-to-cancel')
