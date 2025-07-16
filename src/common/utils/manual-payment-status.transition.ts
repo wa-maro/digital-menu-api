@@ -4,16 +4,12 @@ type ManualPaymentTransitionMap = { [K in PaymentStatus]?: PaymentStatus[] };
 
 export const allowedManualPaymentTransitionMap: ManualPaymentTransitionMap = {
   [PaymentStatus.PENDING_CONFIRMATION]: [
-    PaymentStatus.MANUAL_REVIEW,
+    PaymentStatus.PAID,
     PaymentStatus.CANCELLED,
   ],
-  [PaymentStatus.MANUAL_REVIEW]: [PaymentStatus.PAID],
-
   [PaymentStatus.PAID]: [PaymentStatus.REFUNDED],
   [PaymentStatus.REFUNDED]: [],
   [PaymentStatus.CANCELLED]: [],
-  [PaymentStatus.FAILED]: [PaymentStatus.PENDING_CONFIRMATION],
-  [PaymentStatus.TIMEOUT]: [PaymentStatus.PENDING_CONFIRMATION],
 };
 
 export function canPaymentStatusTransit(

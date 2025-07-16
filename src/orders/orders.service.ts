@@ -53,7 +53,7 @@ export class OrdersService {
 
     const initialPaymentStatus =
       dto.paymentMethod === PaymentMethod.CASH
-        ? PaymentStatus.PENDING
+        ? PaymentStatus.PENDING_CONFIRMATION
         : PaymentStatus.PENDING;
 
     const orderId = await this.orderCounterService.getNextOrderNumber();
@@ -98,7 +98,7 @@ export class OrdersService {
 
     const initialPaymentStatus =
       dto.paymentMethod === PaymentMethod.CASH
-        ? PaymentStatus.PENDING
+        ? PaymentStatus.PENDING_CONFIRMATION
         : PaymentStatus.PENDING;
 
     const order = new this.orderModel({
@@ -144,8 +144,8 @@ export class OrdersService {
 
     const initialPaymentStatus =
       dto.paymentMethod === PaymentMethod.CASH
-        ? PaymentStatus.PENDING // Awaiting cash on delivery/pickup
-        : PaymentStatus.PENDING; // Will be updated on AzamPesa confirmation
+        ? PaymentStatus.PENDING_CONFIRMATION
+        : PaymentStatus.PENDING;
 
     const newOrder = new this.orderModel({
       user: userId,
@@ -332,32 +332,18 @@ export class OrdersService {
     const order = await this.orderModel.findOne({ _id: orderId });
     if (!order) throw new NotFoundException('Order not found');
 
-    // Prevent confirming payments that are already final
-    if (
-      [
-        PaymentStatus.PAID,
-        PaymentStatus.FAILED,
-        PaymentStatus.CANCELLED,
-        PaymentStatus.REFUNDED,
-      ].includes(order.paymentStatus)
-    ) {
-      throw new BadRequestException(
-        `Cannot manually confirm a payment in '${order.paymentStatus}' status`,
-      );
-    }
-
-    if (order.paymentStatus === PaymentStatus.MANUAL_REVIEW)
-      throw new BadRequestException('Payment is already under manual review');
+    const currentStatus = order.paymentStatus;
+    const nextStatus = PaymentStatus.PAID;
 
     const isValidNext = canPaymentStatusTransit(
-      order.paymentStatus,
-      PaymentStatus.MANUAL_REVIEW,
+      currentStatus,
+      nextStatus,
       'manual',
     );
 
     if (!isValidNext)
       throw new BadRequestException(
-        `Invalid payment status transition from ${order.paymentStatus} to ${PaymentStatus.MANUAL_REVIEW}`,
+        `Invalid payment status transition from ${currentStatus} to ${nextStatus}`,
       );
 
     // Generate transactionId if not provided (for cash)
@@ -367,7 +353,7 @@ export class OrdersService {
 
     const now = new Date();
 
-    order.paymentStatus = PaymentStatus.MANUAL_REVIEW;
+    order.paymentStatus = nextStatus;
     order.paymentDetails = {
       ...(order.paymentDetails || {}),
       userEnteredTransactionId: transactionId,
@@ -378,16 +364,16 @@ export class OrdersService {
     order.paymentLog = [
       ...(order.paymentLog || []),
       {
-        status: PaymentStatus.MANUAL_REVIEW,
+        status: nextStatus,
         timestamp: now,
-        message: `Manual payment confirmation submitted. TxID: ${transactionId}, Phone: ${dto.phoneNumber}`,
+        message: `Manual payment confirmed. TxID: ${transactionId}, Phone: ${dto.phoneNumber}`,
       },
     ];
 
     await order.save();
 
     return {
-      message: 'Manual payment submitted for review',
+      message: 'Manual payment confirmed',
       orderId: order.orderId,
       transactionId,
     };
