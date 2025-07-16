@@ -13,6 +13,11 @@ import {
   OrderCounterSchema,
 } from './schemas/order-counter.schema';
 import { OrderCounterService } from './order-counter.service';
+import {
+  TransactionCounter,
+  TransactionCounterSchema,
+} from './schemas/transaction-counter.schema';
+import { TransactionCounterService } from './transaction-counter.service';
 
 @Module({
   imports: [
@@ -20,6 +25,7 @@ import { OrderCounterService } from './order-counter.service';
       { name: Order.name, schema: OrderSchema },
       { name: Cart.name, schema: CartSchema },
       { name: OrderCounter.name, schema: OrderCounterSchema },
+      { name: TransactionCounter.name, schema: TransactionCounterSchema },
     ]),
   ],
   controllers: [
@@ -27,7 +33,13 @@ import { OrderCounterService } from './order-counter.service';
     AdminOrdersController,
     CustomerCartController,
   ],
-  providers: [OrdersService, CartService, OrderCounterService, OrdersGateway],
+  providers: [
+    OrdersService,
+    CartService,
+    OrderCounterService,
+    TransactionCounterService,
+    OrdersGateway,
+  ],
   exports: [MongooseModule, OrdersService],
 })
 export class OrdersModule {}

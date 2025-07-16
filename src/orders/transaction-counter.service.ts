@@ -1,25 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import {
-  OrderCounter,
-  OrderCounterDocument,
-} from './schemas/order-counter.schema';
+  TransactionCounter,
+  TransactionCounterDocument,
+} from './schemas/transaction-counter.schema';
+import { Model } from 'mongoose';
 
 @Injectable()
-export class OrderCounterService {
+export class TransactionCounterService {
   constructor(
-    @InjectModel(OrderCounter.name)
-    private orderCounterModel: Model<OrderCounterDocument>,
+    @InjectModel(TransactionCounter.name)
+    private transactionCounterModel: Model<TransactionCounterDocument>,
   ) {}
 
-  async getNextOrderNumber(): Promise<string> {
+  async getNextTransactionNumber(): Promise<string> {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const monthKey = `${year}${month}`;
 
-    const result = await this.orderCounterModel.findOneAndUpdate(
+    const result = await this.transactionCounterModel.findOneAndUpdate(
       { month: monthKey },
       [
         {
@@ -35,7 +35,7 @@ export class OrderCounterService {
       },
     );
 
-    const orderNumber = String(result.lastNumber).padStart(6, '0');
-    return `ORD-${monthKey}-${orderNumber}`;
+    const transactionNumber = String(result.lastNumber).padStart(6, '0');
+    return `TXN-${monthKey}-${transactionNumber}`;
   }
 }
