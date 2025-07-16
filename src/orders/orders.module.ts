@@ -8,12 +8,18 @@ import { CustomerCartController } from 'src/cart/customer-cart.controller';
 import { CartService } from 'src/cart/cart.service';
 import { OrdersGateway } from './orders.gateway';
 import { AdminOrdersController } from './admin-orders.controller';
+import {
+  OrderCounter,
+  OrderCounterSchema,
+} from './schemas/order-counter.schema';
+import { OrderCounterService } from './order-counter.service';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Order.name, schema: OrderSchema },
       { name: Cart.name, schema: CartSchema },
+      { name: OrderCounter.name, schema: OrderCounterSchema },
     ]),
   ],
   controllers: [
@@ -21,7 +27,7 @@ import { AdminOrdersController } from './admin-orders.controller';
     AdminOrdersController,
     CustomerCartController,
   ],
-  providers: [OrdersService, CartService, OrdersGateway],
+  providers: [OrdersService, CartService, OrderCounterService, OrdersGateway],
   exports: [MongooseModule, OrdersService],
 })
 export class OrdersModule {}

@@ -105,6 +105,9 @@ const PaymentDetailsSchema = SchemaFactory.createForClass(PaymentDetails);
 
 @Schema({ timestamps: true })
 export class Order {
+  @Prop({ required: true, unique: true })
+  orderId: string;
+
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
   user: Types.ObjectId;
 

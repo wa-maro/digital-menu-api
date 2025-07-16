@@ -13,7 +13,6 @@ import {
 } from './schemas/order.schema';
 import { isValidObjectId, Model, Types } from 'mongoose';
 import { PlaceOrderDto } from './dto/place-order.dto';
-import { UpdateStatusDto } from './dto/update-status.dto';
 import { CartService } from 'src/cart/cart.service';
 import { PlaceFromCartDto } from './dto/place-from-cart.dto';
 import { ReorderDto } from './dto/reorder.dto';
@@ -21,6 +20,7 @@ import { OrdersGateway } from './orders.gateway';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { ManualPaymentConfirmationDto } from 'src/payments/dto/manual-payment-confirmation.dto';
 import { PaymentStatusQueryDto } from 'src/payments/dto/payment-status-query.dto';
+import { OrderCounterService } from './order-counter.service';
 
 type OrderTransitionMap = { [K in OrderStatus]?: OrderStatus[] };
 
@@ -57,6 +57,7 @@ export function canStatusTransit(from: OrderStatus, to: OrderStatus): boolean {
 @Injectable()
 export class OrdersService {
   constructor(
+    private readonly orderCounterService: OrderCounterService,
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
     private readonly cartService: CartService,
     private readonly orderGateway: OrdersGateway,
@@ -83,8 +84,11 @@ export class OrdersService {
         ? PaymentStatus.PENDING
         : PaymentStatus.PENDING;
 
+    const orderId = await this.orderCounterService.getNextOrderNumber();
+
     const newOrder = await this.orderModel.create({
       user: userId,
+      orderId: orderId,
       items,
       type: dto.type,
       total,
