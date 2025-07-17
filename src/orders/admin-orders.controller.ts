@@ -5,7 +5,6 @@ import {
   Param,
   Post,
   Put,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
@@ -14,8 +13,6 @@ import { RoleGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { ApproveCancelDto } from './dto/approve-cancel.dto';
-import { CustomRequest } from 'src/interfaces/custom-request.interface';
-import { PaymentStatusQueryDto } from 'src/payments/dto/payment-status-query.dto';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @Roles('manager', 'admin')
@@ -47,13 +44,5 @@ export class AdminOrdersController {
     @Body() dto: ApproveCancelDto,
   ) {
     return await this.ordersService.approveOrRejectCancel(id, dto.status);
-  }
-
-  @Post('status/query')
-  async queryPaymentStatus(
-    @Body() dto: PaymentStatusQueryDto,
-    @Req() req: CustomRequest,
-  ) {
-    return await this.ordersService.queryPaymentStatus(dto);
   }
 }

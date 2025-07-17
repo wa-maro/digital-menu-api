@@ -11,8 +11,6 @@ import { CartService } from 'src/cart/cart.service';
 import { PlaceFromCartDto } from './dto/place-from-cart.dto';
 import { ReorderDto } from './dto/reorder.dto';
 import { OrdersGateway } from './orders.gateway';
-import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
-import { PaymentStatusQueryDto } from 'src/payments/dto/payment-status-query.dto';
 import { OrderCounterService } from './order-counter.service';
 import { canStatusTransit } from 'src/orders/utils/order-status.transition';
 import {
@@ -36,7 +34,7 @@ export class OrdersService {
     const total = dto.items.reduce(
       (sum, item) => sum + item.quantity * item.price,
       0,
-    );
+    ); 
 
     const items = dto.items.map((i) => ({
       item: i.itemId,
@@ -236,35 +234,6 @@ export class OrdersService {
     return await this.getOrderByIdForAdmin(id);
   }
 
-  async updatePaymentStatus(orderId: string, dto: UpdatePaymentStatusDto) {
-    const order = await this.orderModel.findById(orderId);
-    if (!order) throw new NotFoundException('Order not found');
-
-    order.paymentStatus = dto.status;
-    order.paymentDetails ??= {};
-
-    if (dto.transactionId)
-      order.paymentDetails.transactionId = dto.transactionId;
-
-    if (dto.userEnteredTransactionId)
-      order.paymentDetails.userEnteredTransactionId =
-        dto.userEnteredTransactionId;
-
-    if (dto.paidAt) order.paymentDetails.paidAt = dto.paidAt;
-
-    order.paymentLog = [
-      ...(order.paymentLog || []),
-      {
-        status: dto.status,
-        timestamp: new Date(),
-        message: dto.message || '',
-      },
-    ];
-
-    await order.save();
-    return order;
-  }
-
   async getAllOrders() {
     return await this.orderModel
       .find()
@@ -314,46 +283,5 @@ export class OrdersService {
     await order.save();
     this.orderGateway.emitOrderStatusUpdate(orderId, status);
     return order;
-  }
-
-  async queryPaymentStatus(dto: PaymentStatusQueryDto) {
-    if (!dto.orderId && !dto.transactionId)
-      throw new BadRequestException(
-        'At least one of orderId or transactionId is required',
-      );
-
-    const query: any = {};
-
-    if (dto.orderId) {
-      if (!isValidObjectId(dto.orderId))
-        throw new BadRequestException('Invalid order ID');
-      query._id = dto.orderId;
-    }
-
-    if (dto.transactionId) {
-      query['paymentDetails.transactionId'] = dto.transactionId;
-    }
-
-    const order = await this.orderModel
-      .findOne(query)
-      .populate('user', 'email')
-      .populate('items.item', 'name')
-      .lean();
-
-    if (!order) throw new NotFoundException('Order not found');
-
-    return {
-      orderId: order._id,
-      user: order.user,
-      paymentStatus: order.paymentStatus,
-      transactionId: order.paymentDetails?.transactionId,
-      userEnteredTransactionId: order.paymentDetails?.userEnteredTransactionId,
-      paidAt: order.paymentDetails?.paidAt,
-      phoneNumber: order.paymentDetails?.phoneNumber,
-      total: order.total,
-      type: order.type,
-      paymentMethod: order.paymentMethod,
-      statusHistory: order.paymentLog,
-    };
   }
 }
