@@ -1,22 +1,24 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Order, OrderDocument, OrderStatus } from './schemas/order.schema';
+import {
+  Order,
+  OrderDocument,
+  OrderStatus,
+  OrderType,
+} from './schemas/order.schema';
 import { isValidObjectId, Model, Types } from 'mongoose';
 import { PlaceOrderDto } from './dto/place-order.dto';
 import { CartService } from 'src/cart/cart.service';
-import { PlaceFromCartDto } from './dto/place-from-cart.dto';
-import { ReorderDto } from './dto/reorder.dto';
 import { OrdersGateway } from './orders.gateway';
 import { OrderCounterService } from './order-counter.service';
 import { canStatusTransit } from 'src/orders/utils/order-status.transition';
-import {
-  PaymentMethod,
-  PaymentStatus,
-} from 'src/payments/schema/payment.schema';
+import { PaymentsService } from 'src/payments/payments.service';
 
 @Injectable()
 export class OrdersService {
@@ -25,137 +27,64 @@ export class OrdersService {
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
     private readonly cartService: CartService,
     private readonly orderGateway: OrdersGateway,
+
+    @Inject(forwardRef(() => PaymentsService))
+    private readonly paymentService: PaymentsService,
   ) {}
 
   async placeOrder(userId: string, dto: PlaceOrderDto) {
     if (!isValidObjectId(userId))
       throw new BadRequestException('Invalid user ID');
 
+    // Compute total from items
     const total = dto.items.reduce(
       (sum, item) => sum + item.quantity * item.price,
       0,
-    ); 
+    );
 
+    // Map items to OrderItem schema
     const items = dto.items.map((i) => ({
-      item: i.itemId,
+      item: new Types.ObjectId(i.itemId),
       quantity: i.quantity,
       customizations: i.customization,
       price: i.price,
     }));
 
-    const initialPaymentStatus =
-      dto.paymentMethod === PaymentMethod.CASH
-        ? PaymentStatus.PENDING_CONFIRMATION
-        : PaymentStatus.PENDING;
+    const orderNumber = await this.orderCounterService.getNextOrderNumber();
 
-    const orderId = await this.orderCounterService.getNextOrderNumber();
-
-    const newOrder = await this.orderModel.create({
-      user: userId,
-      orderId: orderId,
+    const orderData: Order = {
+      user: new Types.ObjectId(userId),
+      orderNumber,
       items,
       type: dto.type,
+      contactPhone: dto.contactPhone,
       total,
-      paymentMethod: dto.paymentMethod,
-      paymentStatus: initialPaymentStatus,
-      paymentLog: [
-        {
-          status: initialPaymentStatus,
-          timestamp: new Date(),
-          message: 'Order placed',
-        },
-      ],
-      paymentDetails: dto.paymentDetails,
-    });
+      status: OrderStatus.PENDING,
+      payments: [],
+    };
 
-    await this.cartService.clearCart(userId);
+    // Handle dine-in, takeaway, delivery specific fields
+    if (dto.type === OrderType.DINE_IN) orderData.tableNumber = dto.tableNumber;
 
-    return newOrder;
-  }
+    if (dto.type === OrderType.TAKEAWAY) orderData.pickupTime = dto.pickupTime;
 
-  async placeOrderFromCart(userId: string, dto: PlaceFromCartDto) {
-    const cart = await this.cartService.getUserCart(userId);
-    if (!cart) throw new NotFoundException('Cart is empty');
+    if (dto.type === OrderType.DELIVERY) {
+      orderData.contactPhone = dto.contactPhone;
+      orderData.deliveryAddress = dto.deliveryAddress;
+      orderData.deliveryLocation = dto.deliveryLocation;
+    }
 
-    const items = cart.items.map((i) => ({
-      item: new Types.ObjectId(i.item),
-      quantity: i.quantity,
-      customizations: i.customizations,
-      price: i.price,
-    }));
-    const total = items.reduce(
-      (sum, { quantity, price }) => sum + quantity * price,
-      0,
+    // Create order
+    const newOrder = await this.orderModel.create(orderData);
+
+    const cashPayment = await this.paymentService.initializeCashPayment(
+      String(newOrder._id),
+      total,
+      orderData.contactPhone,
     );
+    newOrder.payments.push(new Types.ObjectId(String(cashPayment._id)));
 
-    const initialPaymentStatus =
-      dto.paymentMethod === PaymentMethod.CASH
-        ? PaymentStatus.PENDING_CONFIRMATION
-        : PaymentStatus.PENDING;
-
-    const order = new this.orderModel({
-      user: userId,
-      items,
-      type: dto.type,
-      total,
-      paymentMethod: dto.paymentMethod,
-      paymentStatus: initialPaymentStatus,
-      paymentLog: [
-        {
-          status: initialPaymentStatus,
-          timestamp: new Date(),
-          message: 'Order placed',
-        },
-      ],
-      paymentDetails: dto.paymentDetails,
-    });
-
-    await order.save();
-    await this.cartService.clearCart(userId);
-
-    return order;
-  }
-
-  async reorderFromPast(userId: string, orderId: string, dto: ReorderDto) {
-    const previousOrder = await this.orderModel.findOne({
-      _id: orderId,
-      user: userId,
-    });
-    if (!previousOrder) throw new NotFoundException('Order not found');
-
-    const clonedItem = previousOrder.items.map((i) => ({
-      item: i.item,
-      quantity: i.quantity,
-      customizations: i.customizations,
-      price: i.price,
-    }));
-    const total = clonedItem.reduce(
-      (sum, { quantity, price }) => sum + quantity * price,
-      0,
-    );
-
-    const initialPaymentStatus =
-      dto.paymentMethod === PaymentMethod.CASH
-        ? PaymentStatus.PENDING_CONFIRMATION
-        : PaymentStatus.PENDING;
-
-    const newOrder = new this.orderModel({
-      user: userId,
-      items: clonedItem,
-      type: dto.type || previousOrder.type,
-      paymentMethod: dto.paymentMethod,
-      paymentStatus: initialPaymentStatus,
-      paymentLog: [
-        {
-          status: initialPaymentStatus,
-          timestamp: new Date(),
-          message: 'Order placed',
-        },
-      ],
-      paymentDetails: dto.paymentDetails,
-      total,
-    });
-
+    // Clear the user's cart
     await this.cartService.clearCart(userId);
 
     return newOrder;
@@ -218,20 +147,21 @@ export class OrdersService {
       );
 
     order.status = status;
+    const now = new Date();
 
     if (order.status === OrderStatus.CONFIRMED) {
-      order.confirmedAt = new Date();
+      order.confirmedAt = now;
     } else if (order.status === OrderStatus.PREPARING) {
-      order.preparedAt = new Date();
+      order.preparedAt = now;
     } else if (order.status === OrderStatus.DELIVERED) {
-      order.deliveredAt = new Date();
+      order.deliveredAt = now;
     }
 
     await order.save();
 
     this.orderGateway.emitOrderStatusUpdate(id, status);
 
-    return await this.getOrderByIdForAdmin(id);
+    return this.getOrderByIdForAdmin(id);
   }
 
   async getAllOrders() {

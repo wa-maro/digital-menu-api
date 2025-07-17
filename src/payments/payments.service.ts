@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,11 +12,11 @@ import {
   PaymentMethod,
   PaymentStatus,
 } from './schema/payment.schema';
-import { isValidObjectId, Model } from 'mongoose';
-import { canPaymentStatusTransit } from './utils/payment-status.transition';
-import { ManualPaymentConfirmationDto } from './dto/manual-payment-confirmation.dto';
+import { isValidObjectId, Model, Types } from 'mongoose';
 import { TransactionCounterService } from './transaction-counter.service';
-import { Order, OrderDocument } from 'src/orders/schemas/order.schema';
+import { OrderStatus } from 'src/orders/schemas/order.schema';
+import { canPaymentStatusTransit } from './utils/payment-status.transition';
+import { OrdersService } from 'src/orders/orders.service';
 
 @Injectable()
 export class PaymentsService {
@@ -22,21 +24,53 @@ export class PaymentsService {
     private readonly transactionCounterService: TransactionCounterService,
     @InjectModel(Payment.name)
     private readonly paymentModel: Model<PaymentDocument>,
-
-    @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
+    @Inject(forwardRef(() => OrdersService))
+    private readonly ordersService: OrdersService,
   ) {}
 
-  async confirmManualPayment(
+  async initializeCashPayment(
     orderId: string,
-    dto: ManualPaymentConfirmationDto,
+    amount: number,
+    phoneNumber: string,
   ) {
+    // Generate transactionId if not provided (for cash)
+    const transactionId =
+      await this.transactionCounterService.getNextTransactionNumber();
+
+    const payment = await this.paymentModel.create({
+      transactionId,
+      order: new Types.ObjectId(orderId),
+      paymentMethod: PaymentMethod.CASH,
+      status: PaymentStatus.PENDING_CONFIRMATION,
+      amount,
+      phoneNumber,
+      logs: [
+        {
+          status: PaymentStatus.PENDING_CONFIRMATION,
+          timestamp: new Date(),
+          message: `Cash payment initialized. TxID: ${transactionId}, Phone: ${phoneNumber}. Awaiting manual confirmation.`,
+        },
+      ],
+    });
+
+    return payment;
+  }
+
+  async confirmCashPayment(orderId: string) {
     if (!isValidObjectId(orderId))
       throw new BadRequestException('Invalid order ID');
 
-    const order = await this.orderModel.findOne({ _id: orderId });
+    const order = await this.ordersService.getOrderByIdForAdmin(orderId);
     if (!order) throw new NotFoundException('Order not found');
 
-    const currentStatus = order.paymentStatus;
+    const payment = await this.paymentModel.findOne({
+      order: orderId,
+      paymentMethod: PaymentMethod.CASH,
+    });
+    if (!payment)
+      throw new NotFoundException('Cash payment not found for this order');
+
+    const currentStatus = payment.status;
     const nextStatus = PaymentStatus.PAID;
 
     const isValidNext = canPaymentStatusTransit(
@@ -45,41 +79,85 @@ export class PaymentsService {
       PaymentMethod.CASH,
     );
 
-    if (!isValidNext)
+    if (!isValidNext) {
       throw new BadRequestException(
         `Invalid payment status transition from ${currentStatus} to ${nextStatus}`,
       );
+    }
 
-    // Generate transactionId if not provided (for cash)
-    const transactionId =
-      dto.transactionId ||
-      (await this.transactionCounterService.getNextTransactionNumber());
-
+    // Update payment details
     const now = new Date();
 
-    order.paymentStatus = nextStatus;
-    order.paymentDetails = {
-      ...(order.paymentDetails || {}),
-      userEnteredTransactionId: transactionId,
-      phoneNumber: dto.phoneNumber,
-      paidAt: now,
-    };
+    payment.status = PaymentStatus.PAID;
+    payment.paidAt = now;
 
-    order.paymentLog = [
-      ...(order.paymentLog || []),
-      {
-        status: nextStatus,
-        timestamp: now,
-        message: `Manual payment confirmed. TxID: ${transactionId}, Phone: ${dto.phoneNumber}`,
-      },
-    ];
+    payment.logs.push({
+      status: PaymentStatus.PAID,
+      timestamp: now,
+      message: `Cash payment confirmed. TxID: ${payment.transactionId}, Phone: ${payment.phoneNumber}`,
+    });
 
-    await order.save();
+    await this.ordersService.updateOrderStatus(orderId, OrderStatus.CONFIRMED);
 
     return {
-      message: 'Manual payment confirmed',
-      orderId: order.orderId,
-      transactionId,
+      message: 'Cash payment confirmed successfully',
+      orderNumber: order.orderNumber,
+      transactionId: payment.transactionId,
+      orderStatus: order.status,
+      paymentStatus: payment.status,
     };
+  }
+
+  async getUserPaymentById(id: string, userId: string) {
+    const payment = await this.paymentModel.findOne({ _id: id, user: userId });
+    if (!payment)
+      throw new NotFoundException(`Payment ${id} not found for this user`);
+
+    return {
+      _id: payment._id,
+      amount: payment.amount,
+      status: payment.status,
+      method: payment.paymentMethod,
+      paidAt: payment.paidAt,
+      order: payment.order._id,
+    };
+  }
+
+  async getUserPayments(userId: string) {
+    const payments = await this.paymentModel.find({ user: userId });
+    return payments.map((payment) => ({
+      _id: payment._id,
+      amount: payment.amount,
+      status: payment.status,
+      method: payment.paymentMethod,
+      paidAt: payment.paidAt,
+      order: payment.order?._id,
+    }));
+  }
+
+  async getPayments() {
+    return await this.paymentModel
+      .find()
+      .populate({
+        path: 'order',
+        populate: { path: 'user' }, // Populates order.user as full object
+      })
+      .lean()
+      .exec();
+  }
+
+  async getPaymentById(id: string) {
+    const payment = await this.paymentModel
+      .findById(id)
+      .populate({
+        path: 'order',
+        populate: { path: 'user' },
+      })
+      .lean()
+      .exec();
+
+    if (!payment) throw new NotFoundException(`Payment ${id} not found`);
+
+    return payment;
   }
 }

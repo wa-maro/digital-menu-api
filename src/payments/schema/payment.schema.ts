@@ -3,7 +3,14 @@ import { Document, Types } from 'mongoose';
 
 export enum PaymentMethod {
   CASH = 'cash',
+  LIPA_NAMBA = 'lipa_namba',
   AZAMPESA = 'azampesa',
+}
+
+export enum SelectedNetwork {
+  MPESA = 'mpesa',
+  TIGOPESA = 'tigopesa',
+  AIRTEL_MONEY = 'airtel-money',
 }
 
 export enum PaymentStatus {
@@ -12,6 +19,7 @@ export enum PaymentStatus {
   PAID = 'paid',
   REFUNDED = 'refunded',
   CANCELLED = 'cancelled',
+  FAILED = 'failed',
 }
 
 @Schema({ timestamps: true })
@@ -25,20 +33,26 @@ export class Payment {
   @Prop({ enum: PaymentMethod, default: PaymentMethod.CASH })
   paymentMethod: PaymentMethod;
 
+  @Prop({ enum: SelectedNetwork })
+  selectedNetwork?: SelectedNetwork;
+
   @Prop({ enum: PaymentStatus, default: PaymentStatus.PENDING_CONFIRMATION })
   status: PaymentStatus;
 
-  @Prop({ required: true })
-  phoneNumber: string;
-
   @Prop({ required: true, min: 0 })
   amount: number;
+
+  @Prop()
+  phoneNumber?: string;
 
   @Prop()
   paidAt?: Date;
 
   @Prop()
   message?: string;
+
+  @Prop({ type: [{ status: String, timestamp: Date, message: String }] })
+  logs: { status: string; timestamp: Date; message?: string }[];
 }
 
 export type PaymentDocument = Payment & Document;
