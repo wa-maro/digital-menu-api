@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+
+import { Model } from 'mongoose';
 import {
   TransactionCounter,
   TransactionCounterDocument,
-} from './schemas/transaction-counter.schema';
-import { Model } from 'mongoose';
+} from './schema/transaction-counter.schema';
 
 @Injectable()
 export class TransactionCounterService {

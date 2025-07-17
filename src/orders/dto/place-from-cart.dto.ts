@@ -8,11 +8,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import {
-  OrderType,
-  PaymentMethod,
-  SelectedNetwork,
-} from '../schemas/order.schema';
+import { OrderType, SelectedNetwork } from '../schemas/order.schema';
+import { PaymentMethod } from 'src/payments/schema/payment.schema';
 
 class PaymentDetailsDto {
   @IsOptional()

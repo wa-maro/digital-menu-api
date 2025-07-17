@@ -1,8 +1,8 @@
-import { PaymentStatus } from 'src/orders/schemas/order.schema';
+import { PaymentMethod, PaymentStatus } from '../schema/payment.schema';
 
-type ManualPaymentTransitionMap = { [K in PaymentStatus]?: PaymentStatus[] };
+type CashPaymentTransitionMap = { [K in PaymentStatus]?: PaymentStatus[] };
 
-export const allowedManualPaymentTransitionMap: ManualPaymentTransitionMap = {
+const allowedCashPaymentTransitionMap: CashPaymentTransitionMap = {
   [PaymentStatus.PENDING_CONFIRMATION]: [
     PaymentStatus.PAID,
     PaymentStatus.CANCELLED,
@@ -15,12 +15,12 @@ export const allowedManualPaymentTransitionMap: ManualPaymentTransitionMap = {
 export function canPaymentStatusTransit(
   from: PaymentStatus,
   to: PaymentStatus,
-  method: 'manual' | 'online',
+  method: PaymentMethod,
 ): boolean {
   switch (method) {
-    case 'manual':
-      return allowedManualPaymentTransitionMap[from]?.includes(to) ?? false;
-    case 'online':
+    case PaymentMethod.CASH:
+      return allowedCashPaymentTransitionMap[from]?.includes(to) ?? false;
+    case PaymentMethod.AZAMPESA:
       // TODO: Placeholder for online transition logic
       return false;
     default:

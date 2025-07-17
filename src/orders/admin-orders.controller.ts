@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  NotFoundException,
   Param,
   Post,
   Put,
@@ -15,7 +14,6 @@ import { RoleGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { ApproveCancelDto } from './dto/approve-cancel.dto';
-import { ManualPaymentConfirmationDto } from 'src/payments/dto/manual-payment-confirmation.dto';
 import { CustomRequest } from 'src/interfaces/custom-request.interface';
 import { PaymentStatusQueryDto } from 'src/payments/dto/payment-status-query.dto';
 
@@ -49,14 +47,6 @@ export class AdminOrdersController {
     @Body() dto: ApproveCancelDto,
   ) {
     return await this.ordersService.approveOrRejectCancel(id, dto.status);
-  }
-
-  @Post(':orderId/confirm-manual-payment')
-  async confirmManualPayment(
-    @Param('orderId') orderId: string,
-    @Body() dto: ManualPaymentConfirmationDto,
-  ) {
-    return await this.ordersService.confirmManualPayment(orderId, dto);
   }
 
   @Post('status/query')

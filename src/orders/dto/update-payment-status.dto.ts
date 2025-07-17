@@ -1,6 +1,6 @@
 import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
-import { PaymentStatus } from '../schemas/order.schema';
 import { Type } from 'class-transformer';
+import { PaymentStatus } from 'src/payments/schema/payment.schema';
 
 export class UpdatePaymentStatusDto {
   @IsEnum(PaymentStatus, {

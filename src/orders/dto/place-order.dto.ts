@@ -10,11 +10,8 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OrderItemDto } from './order-item.dto';
-import {
-  OrderType,
-  PaymentMethod,
-  SelectedNetwork,
-} from '../schemas/order.schema';
+import { OrderType, SelectedNetwork } from '../schemas/order.schema';
+import { PaymentMethod } from 'src/payments/schema/payment.schema';
 
 class DeliveryLocationDto {
   @IsNotEmpty()
@@ -31,7 +28,8 @@ class DeliveryLocationDto {
 class PaymentDetailsDto {
   @IsOptional()
   @IsEnum(SelectedNetwork, {
-    message: 'selectedNetwork must be one of: mpesa, tigopesa, airtel-money, azampesa',
+    message:
+      'selectedNetwork must be one of: mpesa, tigopesa, airtel-money, azampesa',
   })
   selectedNetwork?: SelectedNetwork;
 

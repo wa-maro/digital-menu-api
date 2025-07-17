@@ -4,13 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import {
-  Order,
-  OrderDocument,
-  OrderStatus,
-  PaymentMethod,
-  PaymentStatus,
-} from './schemas/order.schema';
+import { Order, OrderDocument, OrderStatus } from './schemas/order.schema';
 import { isValidObjectId, Model, Types } from 'mongoose';
 import { PlaceOrderDto } from './dto/place-order.dto';
 import { CartService } from 'src/cart/cart.service';
@@ -18,18 +12,18 @@ import { PlaceFromCartDto } from './dto/place-from-cart.dto';
 import { ReorderDto } from './dto/reorder.dto';
 import { OrdersGateway } from './orders.gateway';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
-import { ManualPaymentConfirmationDto } from 'src/payments/dto/manual-payment-confirmation.dto';
 import { PaymentStatusQueryDto } from 'src/payments/dto/payment-status-query.dto';
 import { OrderCounterService } from './order-counter.service';
-import { TransactionCounterService } from './transaction-counter.service';
-import { canStatusTransit } from 'src/common/utils/order-status.transition';
-import { canPaymentStatusTransit } from 'src/common/utils/manual-payment-status.transition';
+import { canStatusTransit } from 'src/orders/utils/order-status.transition';
+import {
+  PaymentMethod,
+  PaymentStatus,
+} from 'src/payments/schema/payment.schema';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private readonly orderCounterService: OrderCounterService,
-    private readonly transactionCounterService: TransactionCounterService,
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
     private readonly cartService: CartService,
     private readonly orderGateway: OrdersGateway,
@@ -320,63 +314,6 @@ export class OrdersService {
     await order.save();
     this.orderGateway.emitOrderStatusUpdate(orderId, status);
     return order;
-  }
-
-  async confirmManualPayment(
-    orderId: string,
-    dto: ManualPaymentConfirmationDto,
-  ) {
-    if (!isValidObjectId(orderId))
-      throw new BadRequestException('Invalid order ID');
-
-    const order = await this.orderModel.findOne({ _id: orderId });
-    if (!order) throw new NotFoundException('Order not found');
-
-    const currentStatus = order.paymentStatus;
-    const nextStatus = PaymentStatus.PAID;
-
-    const isValidNext = canPaymentStatusTransit(
-      currentStatus,
-      nextStatus,
-      'manual',
-    );
-
-    if (!isValidNext)
-      throw new BadRequestException(
-        `Invalid payment status transition from ${currentStatus} to ${nextStatus}`,
-      );
-
-    // Generate transactionId if not provided (for cash)
-    const transactionId =
-      dto.transactionId ||
-      (await this.transactionCounterService.getNextTransactionNumber());
-
-    const now = new Date();
-
-    order.paymentStatus = nextStatus;
-    order.paymentDetails = {
-      ...(order.paymentDetails || {}),
-      userEnteredTransactionId: transactionId,
-      phoneNumber: dto.phoneNumber,
-      paidAt: now,
-    };
-
-    order.paymentLog = [
-      ...(order.paymentLog || []),
-      {
-        status: nextStatus,
-        timestamp: now,
-        message: `Manual payment confirmed. TxID: ${transactionId}, Phone: ${dto.phoneNumber}`,
-      },
-    ];
-
-    await order.save();
-
-    return {
-      message: 'Manual payment confirmed',
-      orderId: order.orderId,
-      transactionId,
-    };
   }
 
   async queryPaymentStatus(dto: PaymentStatusQueryDto) {

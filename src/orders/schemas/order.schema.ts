@@ -1,6 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { OrderItem, OrderItemSchema } from './order-item.schema';
+import {
+  PaymentMethod,
+  PaymentStatus,
+} from 'src/payments/schema/payment.schema';
 
 export type OrderDocument = Order & Document;
 
@@ -23,22 +27,6 @@ export enum OrderStatus {
   CANCELLED = 'cancelled',
   REJECTED_CANCEL_REQUEST = 'rejected_cancel_request',
   FAILED = 'failed',
-}
-
-export enum PaymentMethod {
-  CASH = 'cash',
-  LIPA_NAMBA = 'lipa_namba',
-}
-
-export enum PaymentStatus {
-  PENDING = 'pending',
-  PENDING_CONFIRMATION = 'pending_confirmation',
-  PAID = 'paid',
-  REFUNDED = 'refunded',
-  FAILED = 'failed',
-  CANCELLED = 'cancelled',
-  MANUAL_REVIEW = 'manual_review',
-  TIMEOUT = 'timeout',
 }
 
 export enum SelectedNetwork {
@@ -124,7 +112,7 @@ export class Order {
   @Prop({ enum: PaymentMethod })
   paymentMethod: PaymentMethod;
 
-  @Prop({ enum: PaymentStatus, default: PaymentStatus.PENDING })
+  @Prop({ enum: PaymentStatus, default: PaymentStatus.PENDING_CONFIRMATION })
   paymentStatus: PaymentStatus;
 
   @Prop({ type: [{ status: String, timestamp: Date, message: String }] })

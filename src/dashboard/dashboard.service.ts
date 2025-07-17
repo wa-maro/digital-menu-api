@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { MenuItem, MenuItemDocument } from 'src/menu/schemas/item.schema';
+import { Order, OrderDocument } from 'src/orders/schemas/order.schema';
 import {
-  Order,
-  OrderDocument,
+  Payment,
+  PaymentDocument,
   PaymentStatus,
-} from 'src/orders/schemas/order.schema';
-import { Payment, PaymentDocument } from 'src/payments/schema/payment.schema';
+} from 'src/payments/schema/payment.schema';
 import { User, UserDocument, UserRole } from 'src/users/user.schema';
 
 @Injectable()
