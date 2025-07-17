@@ -33,7 +33,7 @@ export class CartService {
     let cart = await this.cartModel.findOne({ user: userId });
     if (!cart)
       cart = new this.cartModel({
-        user: userId,
+        user: new Types.ObjectId(userId),
         items: [],
       });
 

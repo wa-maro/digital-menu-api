@@ -36,7 +36,6 @@ export class CustomerCartController {
   @Post()
   async addItem(@Body() dto: AddToCartDto, @Req() req: CustomRequest) {
     const userId = req.user['userId'];
-
     return await this.cartService.addItem(userId, dto);
   }
 

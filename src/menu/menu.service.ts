@@ -8,7 +8,7 @@ import { Category, CategoryDocument } from './schemas/category.schema';
 import { MenuItem, MenuItemDocument } from './schemas/item.schema';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { CreateItemDto } from './dto/create-item.dto';
-import { isValidObjectId, Model } from 'mongoose';
+import { isValidObjectId, Model, Types } from 'mongoose';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { escapeRegex } from 'src/common/helpers/regex.helper';
@@ -28,7 +28,8 @@ export class MenuService {
         `Category with name "${dto.name}" already exists.`,
       );
 
-    return await this.categoryModel.create(dto);
+    const category = new this.categoryModel(dto);
+    await category.save();
   }
 
   async getCategories() {
@@ -87,7 +88,17 @@ export class MenuService {
         `Item with name "${dto.name}" already exists.`,
       );
 
-    return await this.itemModel.create(dto);
+    const { category, name, price, available, description, imageURL } = dto;
+
+    const item = new this.itemModel({
+      name,
+      price,
+      description,
+      available,
+      imageURL,
+      category: new Types.ObjectId(category),
+    });
+    await item.save();
   }
 
   async getItems() {

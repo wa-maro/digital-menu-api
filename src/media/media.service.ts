@@ -96,6 +96,12 @@ export class MediaService {
     dto: UploadMediaDto,
     userId: string,
   ) {
+    if (!isValidObjectId(userId))
+      throw new BadRequestException('Invalid User ID');
+
+    if (!isValidObjectId(dto.category))
+      throw new BadRequestException('Invalid Category ID');
+
     const existing = await this.mediaModel.findOne({
       $or: [
         { displayName: { $regex: `^${dto.displayName}$`, $options: 'i' } },
@@ -110,10 +116,11 @@ export class MediaService {
     const uploadedFile = await this.uploadMediaFile(file);
 
     const media = new this.mediaModel({
-      ...dto,
+      displayName: dto.displayName,
       url: uploadedFile.url,
+      category: new Types.ObjectId(dto.category),
       filename: uploadedFile.filename,
-      uploadedBy: userId,
+      uploadedBy: new Types.ObjectId(userId),
     });
     if (!media) throw new BadRequestException('Media not created');
 

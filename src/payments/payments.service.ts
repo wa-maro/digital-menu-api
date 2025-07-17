@@ -29,7 +29,7 @@ export class PaymentsService {
   ) {}
 
   async initializeCashPayment(
-    orderId: string,
+    orderId: Types.ObjectId,
     amount: number,
     phoneNumber: string,
   ) {
@@ -37,9 +37,9 @@ export class PaymentsService {
     const transactionId =
       await this.transactionCounterService.getNextTransactionNumber();
 
-    const payment = await this.paymentModel.create({
+    const payment = new this.paymentModel({
       transactionId,
-      order: new Types.ObjectId(orderId),
+      order: orderId,
       paymentMethod: PaymentMethod.CASH,
       status: PaymentStatus.PENDING_CONFIRMATION,
       amount,
@@ -53,7 +53,7 @@ export class PaymentsService {
       ],
     });
 
-    return payment;
+    return await payment.save();
   }
 
   async confirmCashPayment(orderId: string) {

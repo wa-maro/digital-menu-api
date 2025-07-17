@@ -74,15 +74,16 @@ export class OrdersService {
       orderData.deliveryLocation = dto.deliveryLocation;
     }
 
-    // Create order
-    const newOrder = await this.orderModel.create(orderData);
+    const newOrder = new this.orderModel(orderData);
 
     const cashPayment = await this.paymentService.initializeCashPayment(
-      String(newOrder._id),
+      new Types.ObjectId(String(newOrder._id)),
       total,
       orderData.contactPhone,
     );
     newOrder.payments.push(new Types.ObjectId(String(cashPayment._id)));
+
+    await newOrder.save();
 
     // Clear the user's cart
     await this.cartService.clearCart(userId);
