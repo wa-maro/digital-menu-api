@@ -22,21 +22,21 @@ export class CustomerOrdersController {
 
   @Post()
   async placeOrder(@Body() dto: PlaceOrderDto, @Req() req: CustomRequest) {
-    return await this.ordersService.placeOrder(req.user['userId'], dto);
+    return await this.ordersService.placeOrder(req.user.userId, dto);
   }
 
   @Get()
   async getMyOrders(@Req() req: CustomRequest) {
-    return await this.ordersService.getUserOrders(req.user['userId']);
+    return await this.ordersService.getUserOrders(req.user.userId);
   }
 
   @Get(':id')
   async getOrder(@Param('id') id: string, @Req() req: CustomRequest) {
-    return await this.ordersService.getOrderById(id, req.user['userId']);
+    return await this.ordersService.getOrderById(id, req.user.userId);
   }
 
   @Post(':id/request-to-cancel')
   async requestCancel(@Param('id') id: string, @Req() req: CustomRequest) {
-    return await this.ordersService.requestCancel(id, req.user['userId']);
+    return await this.ordersService.requestCancel(id, req.user.userId);
   }
 }

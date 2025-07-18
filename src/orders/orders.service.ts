@@ -96,7 +96,7 @@ export class OrdersService {
       throw new BadRequestException('Invalid user ID');
 
     return await this.orderModel
-      .find({ user: userId })
+      .find({ user: new Types.ObjectId(userId) })
       .populate('items.item')
       .lean()
       .exec();
@@ -110,7 +110,7 @@ export class OrdersService {
       throw new BadRequestException('Invalid user ID');
 
     const order = await this.orderModel
-      .findOne({ _id: id, user: userId })
+      .findOne({ _id: id, user: new Types.ObjectId(userId) })
       .populate('items.item')
       .lean()
       .exec();
@@ -176,7 +176,10 @@ export class OrdersService {
   }
 
   async requestCancel(orderId: string, userId: string) {
-    const order = await this.orderModel.findOne({ _id: orderId, user: userId });
+    const order = await this.orderModel.findOne({
+      _id: orderId,
+      user: new Types.ObjectId(userId),
+    });
 
     if (!order) throw new NotFoundException(`Order not found`);
 
