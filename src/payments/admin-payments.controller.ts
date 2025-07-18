@@ -1,9 +1,16 @@
-import { Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { RoleGuard } from 'src/common/guards/roles.guard';
 import { PaymentsService } from './payments.service';
-import { CustomRequest } from 'src/interfaces/custom-request.interface';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @Roles('manager', 'admin')
@@ -21,8 +28,8 @@ export class AdminPaymentController {
     return await this.paymentsService.getPaymentById(id);
   }
 
-  @Post(':orderId/confirm-manual-payment')
-  async confirmManualPayment(@Param('orderId') orderId: string) {
+  @Post('confirm-manual-payment')
+  async confirmManualPayment(@Body('orderId') orderId: string) {
     return await this.paymentsService.confirmCashPayment(orderId);
   }
 }

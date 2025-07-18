@@ -48,7 +48,7 @@ export class PaymentsService {
         {
           status: PaymentStatus.PENDING_CONFIRMATION,
           timestamp: new Date(),
-          message: `Cash payment initialized. TxID: ${transactionId}, Phone: ${phoneNumber}. Awaiting manual confirmation.`,
+          message: `TxID: ${transactionId} - Cash payment initialized.`,
         },
       ],
     });
@@ -61,10 +61,9 @@ export class PaymentsService {
       throw new BadRequestException('Invalid order ID');
 
     const order = await this.ordersService.getOrderByIdForAdmin(orderId);
-    if (!order) throw new NotFoundException('Order not found');
 
     const payment = await this.paymentModel.findOne({
-      order: orderId,
+      order: new Types.ObjectId(orderId),
       paymentMethod: PaymentMethod.CASH,
     });
     if (!payment)
@@ -94,8 +93,10 @@ export class PaymentsService {
     payment.logs.push({
       status: PaymentStatus.PAID,
       timestamp: now,
-      message: `Cash payment confirmed. TxID: ${payment.transactionId}, Phone: ${payment.phoneNumber}`,
+      message: `TxID: ${payment.transactionId} - Cash payment confirmed.`,
     });
+
+    await payment.save();
 
     await this.ordersService.updateOrderStatus(orderId, OrderStatus.CONFIRMED);
 

@@ -98,6 +98,7 @@ export class OrdersService {
     return await this.orderModel
       .find({ user: new Types.ObjectId(userId) })
       .populate('items.item')
+      .populate({ path: 'payments', populate: { path: 'logs' } })
       .lean()
       .exec();
   }
@@ -112,6 +113,7 @@ export class OrdersService {
     const order = await this.orderModel
       .findOne({ _id: id, user: new Types.ObjectId(userId) })
       .populate('items.item')
+      .populate({ path: 'payments', populate: { path: 'logs' } })
       .lean()
       .exec();
 
@@ -128,6 +130,7 @@ export class OrdersService {
       .findById(id)
       .populate('items.item')
       .populate({ path: 'user', select: 'fullName email' })
+      .populate({ path: 'payments', populate: { path: 'logs' } })
       .lean()
       .exec();
 
@@ -170,6 +173,7 @@ export class OrdersService {
       .find()
       .populate({ path: 'user', select: 'fullName email' })
       .populate('items.item', 'name price')
+      .populate({ path: 'payments', populate: { path: 'logs' } })
       .sort({ createdAt: -1 })
       .lean()
       .exec();
