@@ -161,4 +161,37 @@ export class PaymentsService {
 
     return payment;
   }
+
+  async updatePaymentStatus(id: string, nextStatus: PaymentStatus) {
+    const payment = await this.paymentModel.findById(id);
+    if (!payment)
+      throw new NotFoundException(`Payment with ID ${id} not found`);
+
+    if (payment.status === nextStatus) {
+      return payment;
+    }
+
+    const isValidNext = canPaymentStatusTransit(
+      payment.status,
+      nextStatus,
+      PaymentMethod.CASH,
+    );
+
+    if (!isValidNext)
+      throw new BadRequestException(
+        `Invalid status transition from ${payment.status} to ${nextStatus}`,
+      );
+    const now = new Date();
+
+    payment.status = nextStatus;
+    payment.logs.push({
+      status: payment.status,
+      timestamp: now,
+      message: `TxID: ${payment.transactionId} - payment was updated.`,
+    });
+
+    await payment.save();
+
+    return payment;
+  }
 }

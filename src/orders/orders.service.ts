@@ -19,6 +19,7 @@ import { OrdersGateway } from './orders.gateway';
 import { OrderCounterService } from './order-counter.service';
 import { canStatusTransit } from 'src/orders/utils/order-status.transition';
 import { PaymentsService } from 'src/payments/payments.service';
+import { PaymentStatus } from 'src/payments/schema/payment.schema';
 
 @Injectable()
 export class OrdersService {
@@ -219,6 +220,12 @@ export class OrdersService {
 
     order.status = status;
     await order.save();
+
+    await this.paymentService.updatePaymentStatus(
+      order.payments[0].toString(),
+      PaymentStatus.CANCELLED,
+    );
+
     this.orderGateway.emitOrderStatusUpdate(orderId, status);
     return order;
   }
