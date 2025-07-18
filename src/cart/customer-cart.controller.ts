@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   Patch,
@@ -11,13 +12,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
-import { CustomRequest } from 'src/interfaces/custom-request.interface';
-import { AddToCartDto } from './dto/add-to-cart.dto';
-import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { RoleGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { OrdersService } from 'src/orders/orders.service';
+import { CustomRequest } from 'src/interfaces/custom-request.interface';
+import { AddToCartDto } from './dto/add-to-cart.dto';
+import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @Roles('customer')
@@ -29,37 +30,38 @@ export class CustomerCartController {
   ) {}
 
   @Get()
-  async getCart(@Req() req: CustomRequest) {
-    return await this.cartService.getUserCart(req.user['userId']);
+  async getUserCart(@Req() req: CustomRequest) {
+    return await this.cartService.getUserCart(req.user.userId);
   }
 
   @Post()
-  async addItem(@Body() dto: AddToCartDto, @Req() req: CustomRequest) {
-    const userId = req.user['userId'];
-    return await this.cartService.addItem(userId, dto);
+  async addItemToUserCart(
+    @Body() dto: AddToCartDto,
+    @Req() req: CustomRequest,
+  ) {
+    return await this.cartService.addItemToCart(req.user.userId, dto);
   }
 
-  @Patch(':itemId')
-  async updateItem(
-    @Param('itemId') itemId: string,
+  @Patch('update-quantity')
+  async updateItemQuantity(
     @Body() dto: UpdateCartItemDto,
     @Req() req: CustomRequest,
   ) {
     return await this.cartService.updateItemQuantity(
-      req.user['userId'],
-      itemId,
-      dto,
+      req.user.userId,
+      dto.itemId,
+      dto.quantity,
     );
   }
 
-  @Delete(':itemId')
+  @Delete('remove-item/:itemId')
   async removeItem(@Param('itemId') itemId: string, @Req() req: CustomRequest) {
-    return await this.cartService.removeItem(req.user['userId'], itemId);
+    return await this.cartService.removeItemFromCart(req.user.userId, itemId);
   }
 
-  @Delete()
-  async clearCart(@Req() req: CustomRequest) {
-    return await this.cartService.clearCart(req.user['userId']);
+  @Delete('clear')
+  async clearUserCart(@Req() req: CustomRequest) {
+    return await this.cartService.clearCartItems(req.user.userId);
   }
 
   @Get('from-order/:orderId')
@@ -68,11 +70,11 @@ export class CustomerCartController {
     @Param('orderId') orderId: string,
     @Query('merge') merge: 'false' | 'true' = 'false',
   ) {
-    const userId = req.user['userId'];
+    const userId = req.user.userId;
     const order = await this.ordersService.getOrderById(orderId, userId);
 
     if (!order || order.user.toString() !== userId)
-      throw new Error('Invalid or unauthorized order access');
+      throw new ForbiddenException('Invalid or unauthorized order access');
 
     return await this.cartService.createCartFromOrder(order, merge === 'true');
   }

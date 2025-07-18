@@ -86,7 +86,7 @@ export class OrdersService {
     await newOrder.save();
 
     // Clear the user's cart
-    await this.cartService.clearCart(userId);
+    await this.cartService.clearCartItems(userId);
 
     return newOrder;
   }
