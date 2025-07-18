@@ -127,7 +127,7 @@ export class OrdersService {
     const order = await this.orderModel
       .findById(id)
       .populate('items.item')
-      .populate('user')
+      .populate({ path: 'user', select: 'fullName email' })
       .lean()
       .exec();
 
@@ -168,7 +168,7 @@ export class OrdersService {
   async getAllOrders() {
     return await this.orderModel
       .find()
-      .populate('user', 'fullName email')
+      .populate({ path: 'user', select: 'fullName email' })
       .populate('items.item', 'name price')
       .sort({ createdAt: -1 })
       .lean()
