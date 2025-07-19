@@ -25,6 +25,10 @@ export class CreateRestaurantDto {
   @IsNotEmpty()
   name: string;
 
+  @IsString()
+  @IsNotEmpty()
+  tagline: string;
+
   @IsOptional()
   @IsString()
   brandLogo?: string;

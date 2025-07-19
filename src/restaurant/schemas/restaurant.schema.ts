@@ -23,6 +23,9 @@ export class Restaurant {
   @Prop({ required: true })
   name: string;
 
+  @Prop({ required: true })
+  tagline: string;
+
   @Prop({ default: null })
   brandLogo?: string;
 
