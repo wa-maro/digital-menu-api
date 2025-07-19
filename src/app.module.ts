@@ -15,6 +15,7 @@ import Joi from 'joi';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { SharedModule } from './shared.module';
+import { RestaurantModule } from './restaurant/restaurant.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { SharedModule } from './shared.module';
     PaymentsModule,
     DashboardModule,
     MediaModule,
+    RestaurantModule,
   ],
   providers: [DashboardService],
   controllers: [DashboardController],
