@@ -1,8 +1,9 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RoleGuard } from 'src/common/guards/roles.guard';
 import { RestaurantService } from './restaurant.service';
+import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @Roles('manager', 'admin')
@@ -13,5 +14,10 @@ export class AdminRestaurantController {
   @Get()
   async getRestaurant() {
     return this.restaurantService.find();
+  }
+
+  @Post()
+  async createRestaurant(@Body() dto: CreateRestaurantDto) {
+    return this.restaurantService.createOrUpdate(dto);
   }
 }
