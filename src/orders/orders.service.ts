@@ -19,7 +19,10 @@ import { OrdersGateway } from './orders.gateway';
 import { OrderCounterService } from './order-counter.service';
 import { canStatusTransit } from 'src/orders/utils/order-status.transition';
 import { PaymentsService } from 'src/payments/payments.service';
-import { PaymentStatus } from 'src/payments/schema/payment.schema';
+import {
+  PaymentMethod,
+  PaymentStatus,
+} from 'src/payments/schema/payment.schema';
 
 @Injectable()
 export class OrdersService {
@@ -77,13 +80,25 @@ export class OrdersService {
 
     const newOrder = new this.orderModel(orderData);
 
-    const cashPayment = await this.paymentService.initializeCashPayment(
-      new Types.ObjectId(String(newOrder._id)),
-      total,
-      orderData.contactPhone,
-    );
-    newOrder.payments.push(new Types.ObjectId(String(cashPayment._id)));
+    let payment: any;
+    if (dto.paymentMethod === PaymentMethod.CASH) {
+      payment = await this.paymentService.initializeCashPayment(
+        new Types.ObjectId(String(newOrder._id)),
+        total,
+        orderData.contactPhone,
+      );
+    } else if (dto.paymentMethod === PaymentMethod.MOBILE_MONEY) {
+      payment = await this.paymentService.initializeOnlinePayment(
+        new Types.ObjectId(String(newOrder._id)),
+        dto.provider,
+        dto.accountNumber,
+        total,
+      );
+    } else {
+      throw new BadRequestException('Unsupported payment method');
+    }
 
+    newOrder.payments.push(new Types.ObjectId(String(payment._id)));
     await newOrder.save();
 
     // Clear the user's cart

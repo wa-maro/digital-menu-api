@@ -7,9 +7,11 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {
+  Currency,
   Payment,
   PaymentDocument,
   PaymentMethod,
+  PaymentProvider,
   PaymentStatus,
 } from './schema/payment.schema';
 import { isValidObjectId, Model, Types } from 'mongoose';
@@ -17,6 +19,9 @@ import { TransactionCounterService } from './transaction-counter.service';
 import { OrderStatus } from 'src/orders/schemas/order.schema';
 import { canPaymentStatusTransit } from './utils/payment-status.transition';
 import { OrdersService } from 'src/orders/orders.service';
+import { ConfigService } from '@nestjs/config';
+import { AzamPayCheckoutDto } from './dto/azampay-checkout.dto';
+import { AzamPayCheckoutResponseDto } from './dto/azampay-checkout-response.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -26,6 +31,7 @@ export class PaymentsService {
     private readonly paymentModel: Model<PaymentDocument>,
     @Inject(forwardRef(() => OrdersService))
     private readonly ordersService: OrdersService,
+    private readonly configService: ConfigService,
   ) {}
 
   async initializeCashPayment(
@@ -193,5 +199,97 @@ export class PaymentsService {
     await payment.save();
 
     return payment;
+  }
+
+  async initializeOnlinePayment(
+    orderId: Types.ObjectId,
+    provider: PaymentProvider,
+    accountNumber: string,
+    amount: number,
+  ) {
+    const azamPesaResponse = await this.initiateAzamPayment({
+      accountNumber,
+      amount,
+      currency: Currency.TZS,
+      externalId: orderId.toString(),
+      provider,
+    });
+
+    if (!azamPesaResponse.success) {
+      throw new BadRequestException(
+        `AzamPesa payment failed: ${azamPesaResponse.message}`,
+      );
+    }
+
+    // Generate transactionId if not provided (for cash)
+    const transactionId =
+      await this.transactionCounterService.getNextTransactionNumber();
+
+    const payment = new this.paymentModel({
+      transactionId,
+      azamTransactionId: azamPesaResponse.transactionId,
+      order: orderId,
+      paymentMethod: PaymentMethod.MOBILE_MONEY,
+      status: PaymentStatus.PENDING,
+      amount,
+      accountNumber,
+      logs: [
+        {
+          status: PaymentStatus.PENDING,
+          timestamp: new Date(),
+          message: `TxID: ${transactionId} - Online payment request sent. Message: ${azamPesaResponse.message}`,
+        },
+      ],
+    });
+
+    return await payment.save();
+  }
+
+  private async initiateAzamPayment(
+    dto: AzamPayCheckoutDto,
+  ): Promise<AzamPayCheckoutResponseDto> {
+    const baseURL = this.configService.get<string>('AZAMPAY_BASE_URL');
+    const token = this.configService.get<string>('token');
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + token,
+    };
+
+    const res = await fetch(`${baseURL}/azampay/mno/checkout`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(dto),
+    });
+
+    return await res.json();
+  }
+
+  // TODO: const accessToken = await this.generateToken();
+  private async generateToken() {
+    const authURL = this.configService.get<string>('AZAMPAY_AUTH_URL');
+    const appname = this.configService.get<string>('AZAMPAY_APPNAME');
+    const clientId = this.configService.get<string>('AZAMPAY_CLIENT_ID');
+    const clientSecret = this.configService.get<string>(
+      'AZAMPAY_CLIENT_SECRET',
+    );
+
+    const dto = {
+      appName: appname,
+      clientId: clientId,
+      clientSecret: clientSecret,
+    };
+
+    const res = await fetch(`${authURL}/AppRegistration/GenerateToken`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(dto),
+    });
+
+    const { data, message, success } = await res.json();
+
+    return data.accessToken;
   }
 }

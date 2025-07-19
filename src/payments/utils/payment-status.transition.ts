@@ -20,7 +20,7 @@ export function canPaymentStatusTransit(
   switch (method) {
     case PaymentMethod.CASH:
       return allowedCashPaymentTransitionMap[from]?.includes(to) ?? false;
-    case PaymentMethod.LIPA_NAMBA:
+    case PaymentMethod.MOBILE_MONEY:
       // TODO: Placeholder for online transition logic
       return false;
     default:

@@ -10,6 +10,7 @@ import {
   TransactionCounterSchema,
 } from './schema/transaction-counter.schema';
 import { TransactionCounterService } from './transaction-counter.service';
+import { PublicPaymentContrller } from './payments.controller';
 
 @Module({
   imports: [
@@ -19,7 +20,11 @@ import { TransactionCounterService } from './transaction-counter.service';
     ]),
     forwardRef(() => OrdersModule),
   ],
-  controllers: [CustomerPaymentController, AdminPaymentController],
+  controllers: [
+    CustomerPaymentController,
+    AdminPaymentController,
+    PublicPaymentContrller,
+  ],
   providers: [PaymentsService, TransactionCounterService],
   exports: [MongooseModule, PaymentsService],
 })

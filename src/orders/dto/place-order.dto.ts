@@ -3,6 +3,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsPhoneNumber,
   IsString,
   ValidateIf,
@@ -11,6 +12,10 @@ import {
 import { Type } from 'class-transformer';
 import { OrderItemDto } from './order-item.dto';
 import { OrderType } from '../schemas/order.schema';
+import {
+  PaymentMethod,
+  PaymentProvider,
+} from 'src/payments/schema/payment.schema';
 
 class DeliveryLocationDto {
   @IsNotEmpty()
@@ -37,11 +42,19 @@ export class PlaceOrderDto {
   })
   type: OrderType;
 
-  @IsNotEmpty({ message: 'Contact phone is required' })
-  @IsPhoneNumber('TZ', {
-    message: 'contactPhone must be a valid Tanzanian number',
-  })
-  contactPhone: string;
+  @IsEnum(PaymentMethod)
+  @IsNotEmpty()
+  paymentMethod: PaymentMethod;
+
+  @ValidateIf((o) => o.paymentMethod === PaymentMethod.MOBILE_MONEY)
+  @IsEnum(PaymentProvider)
+  @IsNotEmpty()
+  provider: PaymentProvider;
+
+  @ValidateIf((o) => o.paymentMethod === PaymentMethod.MOBILE_MONEY)
+  @IsPhoneNumber('TZ')
+  @IsNotEmpty()
+  accountNumber: string;
 
   @ValidateIf((o) => o.type === OrderType.DINE_IN)
   @IsNotEmpty({ message: 'Table number is required for dine-in orders' })
@@ -63,4 +76,14 @@ export class PlaceOrderDto {
   @Type(() => DeliveryLocationDto)
   @IsNotEmpty({ message: 'Delivery location is required for delivery orders' })
   deliveryLocation?: DeliveryLocationDto;
+
+  @ValidateIf(
+    (o) => o.type === OrderType.DELIVERY || o.type === OrderType.TAKEAWAY,
+  )
+  @IsNotEmpty({ message: 'Contact phone is required' })
+  @IsPhoneNumber('TZ', {
+    message: 'contactPhone must be a valid Tanzanian number',
+  })
+  @IsOptional()
+  contactPhone: string;
 }

@@ -3,14 +3,15 @@ import { Document, Types } from 'mongoose';
 
 export enum PaymentMethod {
   CASH = 'cash',
-  LIPA_NAMBA = 'lipa_namba',
-  AZAMPESA = 'azampesa',
+  MOBILE_MONEY = 'mobile_money',
 }
 
-export enum SelectedNetwork {
-  MPESA = 'mpesa',
-  TIGOPESA = 'tigopesa',
-  AIRTEL_MONEY = 'airtel-money',
+export enum PaymentProvider {
+  Mpesa = 'Mpesa',
+  Tigo = 'Tigo',
+  Airtel = 'Airtel',
+  Halopesa = 'Halopesa',
+  Azampesa = 'Azampesa',
 }
 
 export enum PaymentStatus {
@@ -20,6 +21,12 @@ export enum PaymentStatus {
   REFUNDED = 'refunded',
   CANCELLED = 'cancelled',
   FAILED = 'failed',
+}
+
+export enum Currency {
+  TZS = 'TZS',
+  USD = 'USD',
+  KES = 'KES',
 }
 
 @Schema({ timestamps: true })
@@ -33,17 +40,23 @@ export class Payment {
   @Prop({ enum: PaymentMethod, default: PaymentMethod.CASH })
   paymentMethod: PaymentMethod;
 
-  @Prop({ enum: SelectedNetwork })
-  selectedNetwork?: SelectedNetwork;
+  @Prop({ enum: PaymentProvider })
+  provider?: PaymentProvider;
 
   @Prop({ enum: PaymentStatus, default: PaymentStatus.PENDING_CONFIRMATION })
   status: PaymentStatus;
 
-  @Prop({ required: true, min: 0 })
+  @Prop({ required: true, min: 0, max: 5000000 })
   amount: number;
 
   @Prop()
-  phoneNumber?: string;
+  currency?: Currency;
+
+  @Prop()
+  azamTransactionId?: string;
+
+  @Prop()
+  accountNumber?: string;
 
   @Prop()
   paidAt?: Date;
