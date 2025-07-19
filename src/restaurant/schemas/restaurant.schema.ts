@@ -17,6 +17,9 @@ export type WorkingHoursMap = {
 
 @Schema({ timestamps: true })
 export class Restaurant {
+  @Prop({ type: String, default: 'singleton' })
+  _id: string;
+
   @Prop({ required: true })
   name: string;
 

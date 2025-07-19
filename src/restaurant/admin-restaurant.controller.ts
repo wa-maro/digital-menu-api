@@ -17,7 +17,7 @@ export class AdminRestaurantController {
   }
 
   @Post()
-  async createRestaurant(@Body() dto: CreateRestaurantDto) {
-    return this.restaurantService.createOrUpdate(dto);
+  async createOrUpdate(@Body() dto: CreateRestaurantDto) {
+    return this.restaurantService.upsertRestaurant(dto);
   }
 }

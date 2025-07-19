@@ -12,6 +12,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 
+const SINGLETON_ID = 'singleton';
+
 @Injectable()
 export class RestaurantService {
   constructor(
@@ -26,18 +28,14 @@ export class RestaurantService {
     return restaurant;
   }
 
-  async createOrUpdate(dto: CreateRestaurantDto): Promise<Restaurant> {
+  async upsertRestaurant(dto: CreateRestaurantDto): Promise<Restaurant> {
     if (dto.workingHours) this.validateWorkingHoursDays(dto.workingHours);
 
-    const existing = await this.restaurantModel.findOne();
-
-    if (existing) {
-      Object.assign(existing, dto);
-      return existing.save();
-    }
-
-    const newRestaurant = new this.restaurantModel(dto);
-    return newRestaurant.save();
+    return this.restaurantModel.findByIdAndUpdate(SINGLETON_ID, dto, {
+      upsert: true,
+      new: true,
+      setDefaultsOnInsert: true,
+    });
   }
 
   private validateWorkingHoursDays(workingHours: Record<string, any>) {
