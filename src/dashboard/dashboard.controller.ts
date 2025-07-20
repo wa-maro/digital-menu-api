@@ -37,4 +37,29 @@ export class DashboardController {
       method,
     });
   }
+
+  @Get('top-performing')
+  getTopPerforming(
+    @Query('type') type: 'day' | 'week' = 'day',
+    @Query('sortBy') sortBy: 'revenue' | 'orders' = 'revenue',
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('method') method?: PaymentMethod,
+  ) {
+    return this.analyticsDashboardService.getTopPerforming({
+      type,
+      sortBy,
+      startDate,
+      endDate,
+      method,
+    });
+  }
+
+  @Get('compare')
+  getComparison(
+    @Query('type') type: 'month' | 'week' = 'month',
+    @Query('method') method?: PaymentMethod,
+  ) {
+    return this.analyticsDashboardService.getComparison({ type, method });
+  }
 }
