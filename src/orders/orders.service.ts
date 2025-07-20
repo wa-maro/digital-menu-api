@@ -85,7 +85,6 @@ export class OrdersService {
       payment = await this.paymentService.initializeCashPayment(
         new Types.ObjectId(String(newOrder._id)),
         total,
-        orderData.contactPhone,
       );
     } else if (dto.paymentMethod === PaymentMethod.MOBILE_MONEY) {
       payment = await this.paymentService.initializeOnlinePayment(

@@ -34,11 +34,7 @@ export class PaymentsService {
     private readonly configService: ConfigService,
   ) {}
 
-  async initializeCashPayment(
-    orderId: Types.ObjectId,
-    amount: number,
-    phoneNumber: string,
-  ) {
+  async initializeCashPayment(orderId: Types.ObjectId, amount: number) {
     // Generate transactionId if not provided (for cash)
     const transactionId =
       await this.transactionCounterService.getNextTransactionNumber();
@@ -49,7 +45,6 @@ export class PaymentsService {
       paymentMethod: PaymentMethod.CASH,
       status: PaymentStatus.PENDING_CONFIRMATION,
       amount,
-      phoneNumber,
       logs: [
         {
           status: PaymentStatus.PENDING_CONFIRMATION,
@@ -147,8 +142,9 @@ export class PaymentsService {
       .find()
       .populate({
         path: 'order',
-        populate: { path: 'user' }, // Populates order.user as full object
+        populate: { path: 'user' },
       })
+      .sort({ createdAt: -1 })
       .lean()
       .exec();
   }
@@ -233,6 +229,7 @@ export class PaymentsService {
       status: PaymentStatus.PENDING,
       amount,
       accountNumber,
+      provider,
       logs: [
         {
           status: PaymentStatus.PENDING,
@@ -249,7 +246,7 @@ export class PaymentsService {
     dto: AzamPayCheckoutDto,
   ): Promise<AzamPayCheckoutResponseDto> {
     const baseURL = this.configService.get<string>('AZAMPAY_BASE_URL');
-    const token = this.configService.get<string>('token');
+    const token = this.configService.get<string>('AZAMPAY_CLIENT_TOKEN');
 
     const headers = {
       'Content-Type': 'application/json',
