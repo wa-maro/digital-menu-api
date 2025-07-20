@@ -42,19 +42,22 @@ export class DashboardService {
   }
 
   async getRecentOrders() {
-    // const twentyFourHoursAgo = new Date(Date.now() - 1024 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(Date.now() - 1024 * 60 * 60 * 1000);
 
-    return (
-      this.orderModel
-        // .find({ createdAt: { $gte: twentyFourHoursAgo } })
-        .find()
-        .sort({ createdAt: -1 })
-        .limit(20)
-        .populate([
-          { path: 'user', select: 'name email' },
-          { path: 'items.item', select: 'name price' },
-        ])
-        .lean()
-    );
+    return this.orderModel
+      .find({ createdAt: { $gte: twentyFourHoursAgo } })
+      .find()
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .populate({
+        path: 'user',
+        select: 'profile email',
+        populate: {
+          path: 'profile',
+          select: 'fullName',
+        },
+      })
+      .populate([{ path: 'items.item', select: 'name price' }])
+      .exec();
   }
 }

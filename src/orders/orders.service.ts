@@ -114,7 +114,6 @@ export class OrdersService {
       .find({ user: new Types.ObjectId(userId) })
       .populate('items.item')
       .populate({ path: 'payments', populate: { path: 'logs' } })
-      .lean()
       .exec();
   }
 
@@ -129,7 +128,6 @@ export class OrdersService {
       .findOne({ _id: id, user: new Types.ObjectId(userId) })
       .populate('items.item')
       .populate({ path: 'payments', populate: { path: 'logs' } })
-      .lean()
       .exec();
 
     if (!order) throw new NotFoundException(`Order doesn't exist`);
@@ -144,9 +142,15 @@ export class OrdersService {
     const order = await this.orderModel
       .findById(id)
       .populate('items.item')
-      .populate({ path: 'user', select: 'fullName email' })
+      .populate({
+        path: 'user',
+        select: 'profile email',
+        populate: {
+          path: 'profile',
+          select: 'fullName',
+        },
+      })
       .populate({ path: 'payments', populate: { path: 'logs' } })
-      .lean()
       .exec();
 
     if (!order) throw new NotFoundException('Order not found');
@@ -186,11 +190,17 @@ export class OrdersService {
   async getAllOrders() {
     return await this.orderModel
       .find()
-      .populate({ path: 'user', select: 'fullName email' })
+      .populate({
+        path: 'user',
+        select: 'profile email',
+        populate: {
+          path: 'profile',
+          select: 'fullName',
+        },
+      })
       .populate('items.item', 'name price')
       .populate({ path: 'payments', populate: { path: 'logs' } })
       .sort({ createdAt: -1 })
-      .lean()
       .exec();
   }
 

@@ -28,6 +28,10 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<UserDocument | null> {
-    return await this.userModel.findOne({ email });
+    return await this.userModel
+      .findOne({ email })
+      .select('-passwordHash')
+      .populate('profile', 'fullName avatarUrl phoneNumber')
+      .exec();
   }
 }

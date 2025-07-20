@@ -142,10 +142,16 @@ export class PaymentsService {
       .find()
       .populate({
         path: 'order',
-        populate: { path: 'user' },
+        populate: {
+          path: 'user',
+          select: 'profile email',
+          populate: {
+            path: 'profile',
+            select: 'fullName',
+          },
+        },
       })
       .sort({ createdAt: -1 })
-      .lean()
       .exec();
   }
 
@@ -156,7 +162,6 @@ export class PaymentsService {
         path: 'order',
         populate: { path: 'user' },
       })
-      .lean()
       .exec();
 
     if (!payment) throw new NotFoundException(`Payment ${id} not found`);

@@ -7,7 +7,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Cart, CartDocument } from './schemas/cart.schema';
 import { isValidObjectId, Model, Types } from 'mongoose';
 import { AddToCartDto } from './dto/add-to-cart.dto';
-import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { Order } from 'src/orders/schemas/order.schema';
 
 @Injectable()
@@ -19,9 +18,15 @@ export class CartService {
   async getAllCarts() {
     return await this.cartModel
       .find({ 'items.0': { $exists: true } })
-      .populate('user', 'fullName email')
+      .populate({
+        path: 'user',
+        select: 'profile email',
+        populate: {
+          path: 'profile',
+          select: 'fullName',
+        },
+      })
       .populate('items.item')
-      .lean()
       .exec();
   }
 
@@ -31,9 +36,15 @@ export class CartService {
 
     const cart = await this.cartModel
       .findById(new Types.ObjectId(cartId))
-      .populate('user', 'fullName email')
+      .populate({
+        path: 'user',
+        select: 'profile email',
+        populate: {
+          path: 'profile',
+          select: 'fullName',
+        },
+      })
       .populate('items.item')
-      .lean()
       .exec();
 
     if (!cart) throw new NotFoundException('Cart not found');
@@ -47,7 +58,6 @@ export class CartService {
     const cart = await this.cartModel
       .findOne({ user: new Types.ObjectId(userId) })
       .populate('items.item')
-      .lean()
       .exec();
 
     if (!cart) throw new NotFoundException('Cart for user is not found');

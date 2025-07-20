@@ -33,7 +33,7 @@ export class MenuService {
   }
 
   async getCategories() {
-    return await this.categoryModel.find().lean().exec();
+    return await this.categoryModel.find().exec();
   }
 
   async getCategory(id: string): Promise<CategoryDocument> {
@@ -102,7 +102,7 @@ export class MenuService {
   }
 
   async getItems() {
-    return await this.itemModel.find().populate('category').lean().exec();
+    return await this.itemModel.find().populate('category').exec();
   }
 
   async getItem(id: string) {
@@ -112,7 +112,7 @@ export class MenuService {
     const item = await this.itemModel
       .findById(id)
       .populate('category')
-      .lean()
+      
       .exec();
     if (!item) throw new NotFoundException(`Item with ID "${id}" not found.`);
 

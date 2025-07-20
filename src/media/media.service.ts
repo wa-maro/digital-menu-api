@@ -63,7 +63,6 @@ export class MediaService {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .lean()
         .exec(),
       this.mediaModel.countDocuments(query),
     ]);
@@ -82,7 +81,7 @@ export class MediaService {
         select: 'name price imageURL',
       })
       .populate({ path: 'uploadedBy', select: 'fullName email' })
-      .lean()
+      
       .exec();
     if (!media) {
       throw new NotFoundException(`Media with ID "${id}" not found.`);
