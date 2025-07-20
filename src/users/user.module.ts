@@ -4,6 +4,7 @@ import { User, UserSchema } from './schemas/user.schema';
 import { UsersController } from './users.controller';
 import { Profile, ProfileSchema } from './schemas/profile.schema';
 import { UsersService } from './users.service';
+import { AdminUsersController } from './admin-users.controller';
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { UsersService } from './users.service';
       { name: User.name, schema: UserSchema },
     ]),
   ],
-  controllers: [UsersController],
+  controllers: [UsersController, AdminUsersController],
   providers: [UsersService],
   exports: [MongooseModule, UsersService],
 })

@@ -69,4 +69,12 @@ export class UsersService {
   async findByEmail(email: string): Promise<UserDocument | null> {
     return await this.userModel.findOne({ email }).exec();
   }
+
+  async findCustomers() {
+    return await this.userModel
+      .find({ role: UserRole.CUSTOMER })
+      .select('-passwordHash -permissions')
+      .populate('profile')
+      .exec();
+  }
 }
