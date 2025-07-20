@@ -8,7 +8,7 @@ import {
   PaymentDocument,
   PaymentStatus,
 } from 'src/payments/schema/payment.schema';
-import { User, UserDocument, UserRole } from 'src/users/user.schema';
+import { User, UserDocument, UserRole } from 'src/users/schemas/user.schema';
 
 @Injectable()
 export class DashboardService {
@@ -30,7 +30,7 @@ export class DashboardService {
           { $group: { _id: null, total: { $sum: '$amount' } } },
         ]),
         this.menuItemModel.countDocuments(),
-        this.userModel.countDocuments({ role: UserRole.CUSTOMER }), // isActive: true or based on last login
+        this.userModel.countDocuments({ role: UserRole.CUSTOMER }), // TODO: isActive: true or based on last login
       ]);
 
     return {

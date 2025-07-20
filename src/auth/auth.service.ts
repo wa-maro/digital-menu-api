@@ -4,45 +4,40 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { User, UserDocument } from 'src/users/user.schema';
+import { UserDocument } from 'src/users/schemas/user.schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { InjectModel } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
-import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import * as jwt from 'jsonwebtoken';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtservice: JwtService,
     private configService: ConfigService,
+    private readonly userService: UsersService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async register(dto: RegisterDto) {
     try {
-      // check if user already exist
-      const existingUser = await this.userModel.findOne({ email: dto.email });
+      const existingUser = await this.userService.findByEmail(dto.email);
       if (existingUser) return new ConflictException('User already exists');
 
-      // encrypt the password
       const hashed = await bcrypt.hash(dto.password, 10);
 
-      // create a new user
-      const user = await this.userModel.create({
-        fullName: dto.fullName,
+      const user = await this.userService.createUser({
         email: dto.email,
-        passwordHash: hashed,
+        password: hashed,
+        fullName: dto.fullName,
       });
 
-      // return registered user as a payload
       return this.signPayload(user);
     } catch (error) {
       console.log(error);
@@ -51,7 +46,7 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     // check if user already exist
-    const user = await this.userModel.findOne({ email: dto.email });
+    const user = await this.userService.findByEmail(dto.email);
     if (!user) return new ConflictException("User doesn't exists");
 
     // compare the password with stored hash
