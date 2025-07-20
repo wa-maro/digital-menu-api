@@ -142,14 +142,7 @@ export class PaymentsService {
       .find()
       .populate({
         path: 'order',
-        populate: {
-          path: 'user',
-          select: 'profile email',
-          populate: {
-            path: 'profile',
-            select: 'fullName',
-          },
-        },
+        select: 'orderNumber',
       })
       .sort({ createdAt: -1 })
       .exec();
@@ -160,7 +153,14 @@ export class PaymentsService {
       .findById(id)
       .populate({
         path: 'order',
-        populate: { path: 'user' },
+        populate: {
+          path: 'user',
+          select: 'profile email',
+          populate: {
+            path: 'profile',
+            select: 'fullName',
+          },
+        },
       })
       .exec();
 
