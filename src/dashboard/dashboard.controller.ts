@@ -25,7 +25,7 @@ export class DashboardController {
     return this.dashboardService.getRecentOrders();
   }
 
-  @Get('analytics')
+  @Get('revenue-insights')
   async getRevenues(
     @Query('month') month: string,
     @Query('week') week: string,
@@ -55,7 +55,7 @@ export class DashboardController {
     });
   }
 
-  @Get('compare')
+  @Get('comparative-trends')
   getComparison(
     @Query('type') type: 'month' | 'week' = 'month',
     @Query('method') method?: PaymentMethod,
