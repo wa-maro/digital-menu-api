@@ -24,4 +24,9 @@ export class AdminPaymentController {
   async confirmManualPayment(@Body('orderId') orderId: string) {
     return await this.paymentsService.confirmCashPayment(orderId);
   }
+
+   @Get('get-token')
+  async getToken() {
+    return await this.paymentsService.generateToken();
+  }
 }
