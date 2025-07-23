@@ -2,12 +2,25 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   Length,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
 import { Currency, PaymentProvider } from '../schema/payment.schema';
+import { Type } from 'class-transformer';
+
+export class AdditionalPropertiesDto {
+  @IsOptional()
+  @IsString()
+  transactionId?: string;
+
+  @IsOptional()
+  @IsString()
+  orderId?: string;
+}
 
 export class AzamPayCheckoutDto {
   @IsString()
@@ -32,4 +45,8 @@ export class AzamPayCheckoutDto {
   @IsEnum(PaymentProvider)
   @IsNotEmpty()
   provider: PaymentProvider;
+
+  @ValidateNested()
+  @Type(() => AdditionalPropertiesDto)
+  additionalProperties: AdditionalPropertiesDto;
 }

@@ -22,7 +22,7 @@ import { OrdersService } from 'src/orders/orders.service';
 import { ConfigService } from '@nestjs/config';
 import { AzamPayCheckoutDto } from './dto/azampay-checkout.dto';
 import { AzamPayCheckoutResponseDto } from './dto/azampay-checkout-response.dto';
-import { AzamCallbackDto } from './dto/azampay-callback.dto';
+import { AzamCallbackPayloadDto } from './dto/azampay-callback.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -209,12 +209,20 @@ export class PaymentsService {
     accountNumber: string,
     amount: number,
   ) {
+    // Generate transactionId if not provided (for cash)
+    const transactionId =
+      await this.transactionCounterService.getNextTransactionNumber();
+
     const azamPesaResponse = await this.initiateAzamPayment({
       accountNumber,
       amount,
       currency: Currency.TZS,
-      externalId: orderId.toString(),
+      externalId: transactionId,
       provider,
+      additionalProperties: {
+        orderId: orderId.toString(),
+        transactionId,
+      },
     });
 
     if (!azamPesaResponse.success) {
@@ -222,10 +230,6 @@ export class PaymentsService {
         `AzamPesa payment failed: ${azamPesaResponse.message}`,
       );
     }
-
-    // Generate transactionId if not provided (for cash)
-    const transactionId =
-      await this.transactionCounterService.getNextTransactionNumber();
 
     const payment = new this.paymentModel({
       transactionId,
@@ -268,79 +272,81 @@ export class PaymentsService {
     return await res.json();
   }
 
- async processIncomingCallback(payload: AzamCallbackDto) {
-  const {
-    transactionstatus,
-    amount,
-    reference,
-    msisdn,
-    operator,
-    utilityref,
-    transid,
-    message,
-  } = payload;
+  async processIncomingCallback(payload: AzamCallbackPayloadDto) {
+    const {
+      transactionstatus,
+      amount,
+      reference,
+      msisdn,
+      operator,
+      utilityref,
+      transid,
+      message,
+      additionalProperties,
+    } = payload;
 
-  const payment = await this.paymentModel.findOne({
-    azamTransactionId: reference, // or transid, if used instead
-    provider: operator,
-    amount: Number(amount),
-  });
-
-  if (!payment) {
-    throw new NotFoundException(
-      `No payment record found for reference: ${reference}, operator: ${operator}`,
-    );
-  }
-
-  // Guard: If already marked PAID, skip
-  if (payment.status === PaymentStatus.PAID) {
-    return { message: 'Payment already processed' };
-  }
-
-  const now = new Date();
-
-  if (transactionstatus === 'success') {
-    payment.status = PaymentStatus.PAID;
-    payment.paidAt = now;
-
-    payment.logs.push({
-      status: PaymentStatus.PAID,
-      timestamp: now,
-      message: `Payment confirmed via AzamPay callback (ref: ${reference})`,
+    const payment = await this.paymentModel.findOne({
+      azamTransactionId: reference, // or transid, if used instead
+      'additionalProperties.transactionId': additionalProperties.transactionId,
+      'additionalProperties.orderId': additionalProperties.orderId,
+      provider: operator,
+      amount: Number(amount),
     });
 
-    await payment.save();
+    if (!payment) {
+      throw new NotFoundException(
+        `No payment record found for reference: ${reference}, operator: ${operator}`,
+      );
+    }
 
-    // Update the related order status to CONFIRMED
-    await this.ordersService.updateOrderStatus(
-      payment.order.toString(),
-      OrderStatus.CONFIRMED,
-    );
+    // Guard: If already marked PAID, skip
+    if (payment.status === PaymentStatus.PAID) {
+      return { message: 'Payment already processed' };
+    }
 
-    // Optional: Confirm to AzamPay, if required
-    await this.AzamCheckoutCallback(payload);
-  } else {
-    payment.status = PaymentStatus.FAILED;
+    const now = new Date();
 
-    payment.logs.push({
-      status: PaymentStatus.FAILED,
-      timestamp: now,
-      message: `AzamPay callback reported failure: ${message}`,
-    });
+    if (transactionstatus === 'success') {
+      payment.status = PaymentStatus.PAID;
+      payment.paidAt = now;
 
-    await payment.save();
+      payment.logs.push({
+        status: PaymentStatus.PAID,
+        timestamp: now,
+        message: `Payment confirmed via AzamPay callback (ref: ${reference})`,
+      });
 
-    await this.ordersService.updateOrderStatus(
-      payment.order.toString(),
-      OrderStatus.FAILED,
-    );
+      await payment.save();
+
+      // Update the related order status to CONFIRMED
+      await this.ordersService.updateOrderStatus(
+        payment.order.toString(),
+        OrderStatus.CONFIRMED,
+      );
+
+      // Optional: Confirm to AzamPay, if required
+      await this.AzamCheckoutCallback(payload);
+    } else {
+      payment.status = PaymentStatus.FAILED;
+
+      payment.logs.push({
+        status: PaymentStatus.FAILED,
+        timestamp: now,
+        message: `AzamPay callback reported failure: ${message}`,
+      });
+
+      await payment.save();
+
+      await this.ordersService.updateOrderStatus(
+        payment.order.toString(),
+        OrderStatus.FAILED,
+      );
+    }
+
+    return { message: 'Callback processed', status: payment.status };
   }
 
-  return { message: 'Callback processed', status: payment.status };
-}
-
-
-  async AzamCheckoutCallback(dto: AzamCallbackDto) {
+  async AzamCheckoutCallback(dto: AzamCallbackPayloadDto) {
     const baseURL = this.configService.get<string>('AZAMPAY_BASE_URL');
     const token = this.configService.get<string>('AZAMPAY_CLIENT_TOKEN');
 
@@ -357,8 +363,9 @@ export class PaymentsService {
 
     if (!res.ok) {
       const errorBody = await res.text();
-      console.log(errorBody);
-      throw new Error(`AzamPay callback failed with status ${res.status}`);
+      throw new Error(`AzamPay callback failed with status ${res.status}`, {
+        cause: errorBody,
+      });
     }
 
     return await res.json();

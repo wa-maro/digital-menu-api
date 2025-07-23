@@ -1,4 +1,12 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { AdditionalPropertiesDto } from './azampay-checkout.dto';
+import { Type } from 'class-transformer';
 
 enum Operators {
   AIRTEL_MONEY = 'Airtel',
@@ -8,7 +16,7 @@ enum Operators {
   MPESA = 'Mpesa',
 }
 
-export class AzamCallbackDto {
+export class AzamCallbackPayloadDto {
   @IsString()
   @IsNotEmpty()
   msisdn: string;
@@ -44,8 +52,7 @@ export class AzamCallbackDto {
   @IsString()
   fspReferenceId?: string;
 
-
-   @IsOptional()
+  @IsOptional()
   @IsString()
   externalreference?: string;
 
@@ -56,4 +63,8 @@ export class AzamCallbackDto {
   @IsOptional()
   @IsString()
   mnoreference?: string;
+
+  @ValidateNested()
+  @Type(() => AdditionalPropertiesDto)
+  additionalProperties: AdditionalPropertiesDto;
 }

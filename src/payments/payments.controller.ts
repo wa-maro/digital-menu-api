@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
-import { AzamCallbackDto } from './dto/azampay-callback.dto';
+import { AzamCallbackPayloadDto } from './dto/azampay-callback.dto';
 
 @Controller('payments')
 export class PublicPaymentContrller {
@@ -8,7 +8,7 @@ export class PublicPaymentContrller {
 
   @Post('callback')
   @HttpCode(HttpStatus.OK)
-  async handleAzamPesaCallback(@Body() payload: AzamCallbackDto) {
+  async handleAzamPesaCallback(@Body() payload: AzamCallbackPayloadDto) {
     await this.paymentsService.processIncomingCallback(payload);
     return { status: 'received' };
   }

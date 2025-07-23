@@ -29,6 +29,11 @@ export enum Currency {
   KES = 'KES',
 }
 
+export interface AdditionalProperties {
+  transactionId?: string;
+  orderId?: string;
+}
+
 @Schema({ timestamps: true })
 export class Payment {
   @Prop({ required: true, unique: true })
@@ -63,6 +68,15 @@ export class Payment {
 
   @Prop()
   message?: string;
+
+  @Prop({
+    type: {
+      transactionId: { type: String },
+      orderId: { type: String },
+    },
+    required: false,
+  })
+  additionalProperties?: AdditionalProperties;
 
   @Prop({ type: [{ status: String, timestamp: Date, message: String }] })
   logs: { status: string; timestamp: Date; message?: string }[];
