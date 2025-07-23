@@ -74,14 +74,20 @@ export class MediaService {
     if (!isValidObjectId(id)) throw new BadRequestException('Invalid media ID');
 
     const media = await this.mediaModel
-      .findById(id)
+      .findById(new Types.ObjectId(id))
       .populate('category')
       .populate({
         path: 'linkedMenuItemIds',
         select: 'name price imageURL',
       })
-      .populate({ path: 'uploadedBy', select: 'fullName email' })
-      
+      .populate({
+        path: 'uploadedBy',
+        select: 'profile email',
+        populate: {
+          path: 'profile',
+          select: 'fullName',
+        },
+      })
       .exec();
     if (!media) {
       throw new NotFoundException(`Media with ID "${id}" not found.`);
@@ -140,7 +146,7 @@ export class MediaService {
     if (category && !isValidObjectId(category))
       throw new BadRequestException(`Invalid category ID: ${dto.category}`);
 
-    const media = await this.mediaModel.findById(id);
+    const media = await this.mediaModel.findById(new Types.ObjectId(id));
     if (!media) throw new NotFoundException('Media not found');
 
     if (file) {
